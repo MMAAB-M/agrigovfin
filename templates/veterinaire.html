@@ -1,0 +1,766 @@
+{% load static %}
+{% load static l10n %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgriGov — Dashboard Vétérinaire</title>
+  <link rel="stylesheet" href="{% static 'css/veterinaire.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- PWA Mobile -->
+<meta name="theme-color" content="#2d7a2d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AgriGov">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
+<link rel="stylesheet" href="{% static 'css/pwa-mobile.css' %}">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     TOAST CONTAINER
+══════════════════════════════════════════ -->
+<div class="vet-toast" id="vetToast"></div>
+
+<!-- ══════════════════════════════════════════
+     MODAL OVERLAY (réutilisable)
+══════════════════════════════════════════ -->
+<div class="vet-modal-overlay" id="vetModal">
+  <div class="vet-modal">
+    <div class="vet-modal-header">
+      <span class="vet-modal-title" id="modalTitle">Titre</span>
+      <button class="vet-modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="vet-modal-body" id="modalBody"></div>
+    <div class="vet-modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     LAYOUT
+══════════════════════════════════════════ -->
+<div class="vet-layout">
+
+  <!-- Mobile overlay -->
+  <div class="vet-mobile-overlay" id="vetOverlay" onclick="closeSidebar()"></div>
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="vet-sidebar" id="vetSidebar">
+
+    <!-- Brand -->
+    <div>
+      <div class="vet-brand">
+        <div class="vet-brand-icon">🐾</div>
+        <div>
+          <h2>AgriGov</h2>
+          <p>Espace Vétérinaire</p>
+        </div>
+      </div>
+
+      <!-- Vet info card -->
+      <div class="vet-sidebar-vet">
+        <div class="vet-avatar">👨‍⚕️</div>
+        <div style="flex:1;min-width:0">
+          <div class="vet-sidebar-vet-name" id="sidebarVetName">Dr. {{ profile.user.first_name }} {{ profile.user.last_name }}</div>
+          <div class="vet-sidebar-vet-spec" id="sidebarVetSpec">{{ vet.specialite|default:"Vétérinaire" }}</div>
+        </div>
+        <div class="disponible-dot" id="disponibleDot" title="Disponible"></div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="vet-nav">
+        <button class="vet-nav-link active" data-page="dashboard" onclick="showPage('dashboard',this)">
+          <span class="nav-icon">🏠</span> Tableau de bord
+        </button>
+        <button class="vet-nav-link" data-page="notifications" onclick="showPage('notifications',this)">
+          <span class="nav-icon">🔔</span> Notifications
+          <span class="nav-badge" id="notifBadge">{{ messages_non_lus }}</span>
+        </button>
+        <button class="vet-nav-link" data-page="alertes" onclick="showPage('alertes',this)">
+          <span class="nav-icon">⚠️</span> Alertes Admin
+          <span class="nav-badge amber" id="alertBadge">{{ alertes_actives }}</span>
+        </button>
+        <button class="vet-nav-link" data-page="cabinet" onclick="showPage('cabinet',this)">
+          <span class="nav-icon">🏥</span> Mon Cabinet
+        </button>
+        <button class="vet-nav-link" data-page="disponibilites" onclick="showPage('disponibilites',this)">
+          <span class="nav-icon">📅</span> Disponibilités
+        </button>
+        <button class="vet-nav-link" data-page="rendez-vous" onclick="showPage('rendez-vous',this)">
+          <span class="nav-icon">📋</span> Rendez-vous
+          <span class="nav-badge" id="rdvBadge">{{ rdv_total }}</span>
+        </button>
+        <button class="vet-nav-link" data-page="tournees" onclick="showPage('tournees',this)">
+          <span class="nav-icon">🚗</span> Mes Tournées
+        </button>
+        <button class="vet-nav-link" data-page="profil" onclick="showPage('profil',this)">
+          <span class="nav-icon">👤</span> Mon Profil
+        </button>
+      </nav>
+    </div>
+
+    <!-- Logout -->
+    <div class="vet-sidebar-bottom">
+      <a href="{% url 'logout' %}" class="vet-logout-btn m-desktop-only">
+        <span>🚪</span> Déconnexion
+      </a>
+    </div>
+  </aside>
+
+  <!-- ─── MAIN ─── -->
+  <main class="vet-main">
+    <!-- Mobile hamburger topbar -->
+    <div class="vet-mobile-topbar" id="vetMobileTopbar">
+      <button class="vet-hamburger" onclick="openSidebar()">☰</button>
+      <span class="vet-mobile-title">AgriGov — Vétérinaire</span>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         PAGE: DASHBOARD
+    ═══════════════════════════════════ -->
+    <section class="vet-page active" id="page-dashboard">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>Tableau de bord</h1>
+          <p id="dashDate">Chargement...</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Changer le thème">🌙 Mode nuit</button>
+          <button class="vet-notif-btn" onclick="showPage('notifications',document.querySelector('[data-page=notifications]'))" title="Notifications">
+            🔔
+            <span class="notif-count" id="topNotifCount">{{ messages_non_lus }}</span>
+          </button>
+          <button class="btn btn-primary" onclick="openRdvModal()">+ Nouveau RDV</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="vet-stats" id="dashStats"></div>
+
+      <!-- Grids -->
+      <div class="vet-grid-2">
+        <!-- Prochains RDV -->
+        <div class="vet-card reveal">
+          <div class="vet-card-header">
+            <span class="vet-card-title">📅 Prochains rendez-vous</span>
+            <button class="btn btn-sm" onclick="showPage('rendez-vous',document.querySelector('[data-page=rendez-vous]'))">Voir tout</button>
+          </div>
+          <div class="vet-card-body" id="dashRdvList"></div>
+        </div>
+
+        <!-- Alertes récentes -->
+        <div class="vet-card reveal">
+          <div class="vet-card-header">
+            <span class="vet-card-title">⚠️ Alertes en cours</span>
+            <button class="btn btn-sm" onclick="showPage('alertes',document.querySelector('[data-page=alertes]'))">Voir tout</button>
+          </div>
+          <div class="vet-card-body" id="dashAlertesList"></div>
+        </div>
+      </div>
+
+      <!-- Activité + Quick actions -->
+      <div class="vet-grid-2">
+        <!-- Demandes en attente -->
+        <div class="vet-card reveal">
+          <div class="vet-card-header">
+            <span class="vet-card-title">⏳ Demandes en attente</span>
+            <span class="nav-badge" id="dashDemBadge" style="position:static">{{ rdv_attente }}</span>
+          </div>
+          <div class="vet-card-body" id="dashDemandesList"></div>
+        </div>
+
+        <!-- Tournées planifiées -->
+        <div class="vet-card reveal">
+          <div class="vet-card-header">
+            <span class="vet-card-title">🚗 Tournées planifiées</span>
+            <button class="btn btn-sm" onclick="showPage('tournees',document.querySelector('[data-page=tournees]'))">Gérer</button>
+          </div>
+          <div class="vet-card-body" id="dashTourneesList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         PAGE: NOTIFICATIONS
+    ═══════════════════════════════════ -->
+    <section class="vet-page" id="page-notifications">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>Notifications</h1>
+          <p>Toutes vos alertes et messages</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <button class="btn" onclick="markAllNotifRead()">✓ Tout marquer lu</button>
+          <select class="form-select" id="notifFilter" onchange="renderNotifications()" style="width:auto;padding:8px 12px;font-size:0.85rem">
+            <option value="all">Toutes</option>
+            <option value="rdv">RDV</option>
+            <option value="alerte">Alertes</option>
+            <option value="msg">Messages</option>
+            <option value="eval">Évaluations</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Alerte banner (depuis agriculteur) -->
+      <div class="alerte-card urgent reveal" id="farmerAlerteBanner" style="margin-bottom:20px;display:none">
+        <div style="font-size:1.5rem">🚨</div>
+        <div style="flex:1">
+          <div style="font-weight:700;margin-bottom:4px" id="farmerAlerteTitle">Urgence signalée</div>
+          <div style="font-size:0.82rem;color:var(--text-secondary)" id="farmerAlerteDesc"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="respondToFarmerAlerte()">Répondre</button>
+      </div>
+
+      <div class="notif-list" id="notifList"></div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         PAGE: ALERTES ADMIN
+    ═══════════════════════════════════ -->
+    <section class="vet-page" id="page-alertes">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>Alertes Administrateur</h1>
+          <p>Alertes de stock et campagnes nationales</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <button class="btn btn-primary" onclick="openTourneeFromAlerte()">
+            🚗 Créer une tournée
+          </button>
+        </div>
+      </div>
+
+      <!-- Explication -->
+      <div class="diag-card reveal" style="margin-bottom:24px">
+        <div class="diag-title">ℹ️ Comment ça marche ?</div>
+        <p style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6">
+          Quand l'administrateur détecte que <strong style="color:var(--amber)">les ventes d'animaux chutent</strong> dans une région,
+          une alerte est envoyée à tous les vétérinaires concernés. Vous pouvez répondre en créant une
+          <strong style="color:var(--green-light)">tournée vétérinaire</strong> pour organiser des consultations dans les wilayas ciblées.
+        </p>
+      </div>
+
+      <div class="alerte-list" id="adminAlertesList"></div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         PAGE: CABINET
+    ═══════════════════════════════════ -->
+    <section class="vet-page" id="page-cabinet">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>Mon Cabinet</h1>
+          <p>Informations et configuration de votre cabinet</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <button class="btn btn-primary" onclick="saveCabinet()">💾 Sauvegarder</button>
+        </div>
+      </div>
+
+      <!-- Map placeholder -->
+      <div class="cabinet-map-placeholder reveal" onclick="showToast('Intégration carte disponible avec l\'API Leaflet','amber')" title="Cliquer pour ouvrir la carte">
+        <div>🗺️</div>
+        <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px">Cliquer pour définir la localisation sur la carte</div>
+      </div>
+
+      <!-- Infos cabinet -->
+      <div class="vet-grid-2 reveal">
+        <div class="vet-card">
+          <div class="vet-card-header"><span class="vet-card-title">📍 Adresse & Contact</span></div>
+          <div class="vet-card-body">
+            <div class="profil-form-grid">
+              <div class="form-group">
+                <label class="form-label">Nom du cabinet</label>
+                <input class="form-input" id="cabinetNom" placeholder="Cabinet vétérinaire El Amine" value="Cabinet Dr. Salah">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Wilaya</label>
+                <select class="form-select" id="cabinetWilaya"></select>
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Adresse complète</label>
+                <input class="form-input" id="cabinetAdresse" placeholder="12 Rue des Agriculteurs, Sétif">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Téléphone</label>
+                <input class="form-input" id="cabinetTel" placeholder="0555 123 456" type="tel">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email professionnel</label>
+                <input class="form-input" id="cabinetEmail" placeholder="contact@cabinet.dz" type="email">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vet-card">
+          <div class="vet-card-header"><span class="vet-card-title">🔧 Services proposés</span></div>
+          <div class="vet-card-body">
+            <div class="cabinet-services-grid" id="servicesGrid"></div>
+            <button class="btn" style="width:100%;margin-top:8px" onclick="openAddServiceModal()">+ Ajouter un service</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Horaires -->
+      <div class="vet-card reveal">
+        <div class="vet-card-header">
+          <span class="vet-card-title">🕐 Horaires d'ouverture</span>
+          <div class="toggle-wrap" style="padding:6px 10px">
+            <span style="font-size:0.8rem;color:var(--text-secondary)">Cabinet ouvert</span>
+            <div class="toggle-switch on" id="cabinetOpenToggle" onclick="toggleCabinetOpen(this)">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+        </div>
+        <div class="vet-card-body">
+          <div class="horaires-grid" id="horairesGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         PAGE: DISPONIBILITÉS
+    ═══════════════════════════════════ -->
+    <section class="vet-page" id="page-disponibilites">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>Disponibilités</h1>
+          <p>Définissez vos dates libres pour les rendez-vous</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <div class="toggle-wrap">
+            <span style="font-size:0.85rem">Disponible maintenant</span>
+            <div class="toggle-switch on" id="dispoToggle" onclick="toggleDispo(this)">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveDisponibilites()">💾 Sauvegarder</button>
+        </div>
+      </div>
+
+      <div class="vet-grid-2">
+        <!-- Calendrier -->
+        <div class="vet-card reveal">
+          <div class="vet-card-header">
+            <div class="cal-nav" style="width:100%">
+              <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+              <span class="cal-month" id="calMonth">Mai 2026</span>
+              <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+            </div>
+          </div>
+          <div class="vet-card-body">
+            <div class="cal-grid" id="calGrid"></div>
+            <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text-secondary)">
+                <div style="width:12px;height:12px;background:rgba(74,161,90,0.18);border:1px solid rgba(74,161,90,0.3);border-radius:3px"></div> Disponible
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text-secondary)">
+                <div style="width:12px;height:12px;background:rgba(232,168,66,0.15);border:1px solid rgba(232,168,66,0.25);border-radius:3px"></div> RDV planifié
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text-secondary)">
+                <div style="width:12px;height:12px;background:rgba(79,159,232,0.15);border:1px solid rgba(79,159,232,0.25);border-radius:3px"></div> Tournée
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Créneaux du jour sélectionné -->
+        <div class="vet-card reveal">
+          <div class="vet-card-header">
+            <span class="vet-card-title" id="selectedDayTitle">📅 Sélectionnez un jour</span>
+          </div>
+          <div class="vet-card-body" id="creneauxContainer">
+            <div class="empty-state">
+              <div class="empty-state-icon">📅</div>
+              <div class="empty-state-text">Cliquez sur une date pour gérer les créneaux</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Récapitulatif hebdomadaire -->
+      <div class="vet-card reveal">
+        <div class="vet-card-header">
+          <span class="vet-card-title">📊 Récapitulatif du mois</span>
+        </div>
+        <div class="vet-card-body">
+          <div class="vet-stats" id="dispoStats"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         PAGE: RENDEZ-VOUS (liste complète)
+    ═══════════════════════════════════ -->
+    <section class="vet-page" id="page-rendez-vous">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>Rendez-vous</h1>
+          <p>Historique et gestion de vos consultations</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <select class="form-select" id="rdvFilterStatut" onchange="renderRdvList()" style="width:auto;padding:8px 12px;font-size:0.85rem">
+            <option value="all">Tous les statuts</option>
+            <option value="en_attente">En attente</option>
+            <option value="confirme">Confirmés</option>
+            <option value="termine">Terminés</option>
+            <option value="refuse">Refusés</option>
+            <option value="annule">Annulés</option>
+          </select>
+          <select class="form-select" id="rdvFilterType" onchange="renderRdvList()" style="width:auto;padding:8px 12px;font-size:0.85rem">
+            <option value="all">Tous les types</option>
+            <option value="consultation">Consultation</option>
+            <option value="vaccination">Vaccination</option>
+            <option value="urgence">Urgence</option>
+            <option value="suivi">Suivi</option>
+            <option value="chirurgie">Chirurgie</option>
+          </select>
+          <button class="btn btn-primary" onclick="openRdvModal()">+ Nouveau RDV</button>
+        </div>
+      </div>
+
+      <!-- ── Bloc tarif consultation ── -->
+      <div id="rdvTarifBanner" style="margin-bottom:20px;border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+        {% if vet.tarif_consultation is None %}background:#fff8e1;border:1.5px solid #f59e0b;{% else %}background:#f0fdf4;border:1.5px solid #22c55e;{% endif %}">
+        <div style="flex:1;min-width:200px">
+          <div data-tarif-title style="font-weight:700;font-size:0.95rem;margin-bottom:2px;
+            {% if vet.tarif_consultation is None %}color:#b45309;{% else %}color:#166534;{% endif %}">
+            {% if vet.tarif_consultation is None %}
+              ⚠️ Tarif de consultation non défini
+            {% else %}
+              💰 Tarif de consultation défini
+            {% endif %}
+          </div>
+          <div data-tarif-desc style="font-size:0.82rem;color:#555">
+            {% if vet.tarif_consultation is None %}
+              Vous devez définir un montant pour permettre aux agriculteurs de prendre rendez-vous.
+            {% else %}
+              Les agriculteurs voient ce montant avant de demander un rendez-vous.
+            {% endif %}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <input type="number" id="rdvTarifInput" min="0" step="50" placeholder="Ex: 2000"
+            value="{{ vet.tarif_consultation|unlocalize }}"
+            style="width:130px;border:1.5px solid #d1d5db;border-radius:8px;padding:8px 12px;font-size:0.9rem;font-weight:600;text-align:center">
+          <span style="font-size:0.88rem;font-weight:600;color:#555">DA</span>
+          <button onclick="vetSauvegarderTarif()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:0.85rem;font-weight:600;cursor:pointer;white-space:nowrap">
+            Enregistrer
+          </button>
+        </div>
+      </div>
+      <!-- ── Fin bloc tarif ── -->
+
+      <div id="rdvListContainer"></div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         PAGE: DEMANDES RDV (accepter/refuser)
+    ═══════════════════════════════════ -->
+    <section class="vet-page" id="page-demandes">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>Demandes de Rendez-vous</h1>
+          <p>Répondez aux demandes des agriculteurs</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <button class="btn" onclick="accepterTousDemandes()">✓ Accepter tout</button>
+        </div>
+      </div>
+
+      <!-- Demandes en attente -->
+      <div class="vet-section-title">⏳ En attente de réponse</div>
+      <div id="demandesEnAttente" style="margin-bottom:32px"></div>
+
+      <!-- Demandes traitées -->
+      <div class="vet-section-title">📜 Récemment traitées</div>
+      <div id="demandesTraitees"></div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         PAGE: TOURNÉES
+    ═══════════════════════════════════ -->
+    <section class="vet-page" id="page-tournees">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>Mes Tournées</h1>
+          <p>Campagnes vétérinaires et déplacements</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <button class="btn btn-primary" onclick="openTourneeModal()">+ Nouvelle tournée</button>
+        </div>
+      </div>
+
+      <div class="tournee-grid" id="tourneeGrid"></div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         PAGE: PROFIL
+    ═══════════════════════════════════ -->
+    <section class="vet-page" id="page-profil">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>Mon Profil</h1>
+          <p>Informations personnelles et professionnelles</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <button class="btn btn-primary" onclick="saveProfil()">💾 Sauvegarder</button>
+        </div>
+      </div>
+
+      <!-- Header profil -->
+      <div class="profil-header reveal">
+        <div class="profil-avatar-big" id="profilAvatar">👨‍⚕️</div>
+        <div class="profil-info" style="flex:1">
+          <h2 id="profilFullName">Dr. {{ profile.user.first_name }} {{ profile.user.last_name }}</h2>
+          <div class="spec" id="profilSpec">{{ vet.specialite|default:"Vétérinaire" }} · {{ vet.wilaya_principale|default:"" }}</div>
+          <div class="order" id="profilOrder">N° Ordre: {{ vet.numero_ordre|default:"Non renseigné" }}</div>
+          <div class="profil-stars" id="profilStars">⭐⭐⭐⭐⭐</div>
+        </div>
+        <div style="text-align:center">
+          <div class="ring-stat">
+            <svg class="ring-svg" width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(74,161,90,0.15)" stroke-width="8"/>
+              <circle cx="40" cy="40" r="32" fill="none" stroke="var(--green-primary)" stroke-width="8" stroke-dasharray="201" stroke-dashoffset="40" stroke-linecap="round" id="ringProgress"/>
+            </svg>
+            <div class="ring-value" id="ringVal">{{ note_moy }}</div>
+            <div class="ring-label">Note moyenne</div>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <div class="vet-stat-value" id="totalConsults" style="font-size:2rem">{{ vet.total_consultations }}</div>
+          <div class="vet-stat-label">Consultations totales</div>
+        </div>
+      </div>
+
+      <!-- Formulaire -->
+      <div class="vet-grid-2">
+        <div class="vet-card reveal">
+          <div class="vet-card-header"><span class="vet-card-title">👤 Informations personnelles</span></div>
+          <div class="vet-card-body">
+            <div class="profil-form-grid">
+              <div class="form-group">
+                <label class="form-label">Prénom</label>
+                <input class="form-input" id="profilPrenom" placeholder="Prénom" value="{{ profile.user.first_name|escapejs }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nom</label>
+                <input class="form-input" id="profilNom" placeholder="Nom" value="{{ profile.user.last_name|escapejs }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Téléphone</label>
+                <input class="form-input" id="profilTel" placeholder="0555 000 000" value="{{ profile.phone|default:''|escapejs }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input class="form-input" id="profilEmail" type="email" placeholder="dr@exemple.dz" value="{{ profile.user.email|escapejs }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Wilaya principale</label>
+                <select class="form-select" id="profilWilaya"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Années d'expérience</label>
+                <input class="form-input" id="profilExp" type="number" min="0" value="{{ vet.experience_annees }}">
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Bio professionnelle</label>
+                <textarea class="form-textarea" id="profilBio" placeholder="Décrivez votre parcours...">{{ vet.bio|default:'' }}</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vet-card reveal">
+          <div class="vet-card-header"><span class="vet-card-title">🏥 Informations professionnelles</span></div>
+          <div class="vet-card-body">
+            <div class="profil-form-grid">
+              <div class="form-group full">
+                <label class="form-label">Spécialité</label>
+                <input class="form-input" id="profilSpecialite" placeholder="Chirurgie bovine, Soins animaux..." value="{{ vet.specialite|default:''|escapejs }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">N° Ordre National</label>
+                <input class="form-input" id="profilOrdre" placeholder="VET-XX-XXXX-XXXX" value="{{ vet.numero_ordre|default:''|escapejs }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tarif consultation (DA)</label>
+                <input class="form-input" id="profilTarif" type="number" value="{{ vet.tarif_consultation|unlocalize }}">
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Statut disponibilité</label>
+                <div class="toggle-wrap">
+                  <span style="font-size:0.85rem;flex:1">Accepter de nouveaux rendez-vous</span>
+                  <div class="toggle-switch {% if vet.disponible %}on{% endif %}" id="profilDispoToggle" onclick="toggleProfilDispo(this)">
+                    <div class="toggle-knob"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Évaluations récentes -->
+            <div style="margin-top:20px">
+              <div class="vet-section-title" style="font-size:0.9rem;margin-bottom:12px">⭐ Évaluations récentes</div>
+              <div id="evalsList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+        <a href="{% url 'logout' %}" class="m-logout-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Se déconnecter
+        </a>
+    </section>
+
+  </main>
+</div>
+
+<script>
+{% load l10n %}{% localize off %}
+/* Inject Django context into JS */
+window.VET_PROFILE = {
+  prenom: "{{ profile.user.first_name|escapejs }}",
+  nom: "{{ profile.user.last_name|escapejs }}",
+  email: "{{ profile.user.email|escapejs }}",
+  phone: "{{ profile.phone|default:''|escapejs }}",
+  specialite: "{{ vet.specialite|escapejs }}",
+  wilaya: "{{ vet.wilaya_principale|escapejs }}",
+  experience: {{ vet.experience_annees }},
+  tarif: {% if vet.tarif_consultation is not None %}{{ vet.tarif_consultation }}{% else %}null{% endif %},
+  bio: "{{ vet.bio|escapejs }}",
+  disponible: {{ vet.disponible|yesno:"true,false" }},
+  note: {{ note_moy }},
+  total_consultations: {{ vet.total_consultations }},
+  numero_ordre: "{{ vet.numero_ordre|escapejs }}",
+};
+window.VET_STATS = {
+  rdv_total: {{ rdv_total }},
+  rdv_attente: {{ rdv_attente }},
+  rdv_aujourd_hui: {{ rdv_aujourd_hui }},
+  messages_non_lus: {{ messages_non_lus }},
+  alertes_actives: {{ alertes_actives }},
+  tournees_actives: {{ tournees_actives }},
+};
+window.VET_CONVERSATIONS = [
+  {% for conv in conversations %}{
+    id: {{ conv.profile.id }},
+    agriculteur: "{{ conv.profile.user.get_full_name|default:conv.profile.user.username|escapejs }}",
+    wilaya: "{{ conv.profile.wilaya|default:''|escapejs }}",
+    avatar: "👨‍🌾",
+    lu: {% if conv.non_lus %}false{% else %}true{% endif %},
+    lastMsg: "{{ conv.dernier_msg.contenu|truncatechars:60|escapejs }}",
+    lastTime: "{{ conv.dernier_msg.date_envoi|date:'H:i' }}",
+    non_lus: {{ conv.non_lus }},
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+window.CSRF_TOKEN = "{{ csrf_token }}";
+{% endlocalize %}
+</script>
+<script src="{% static 'js/veterinaire.js' %}"></script>
+<script src="{% static 'js/veterinaire-api-bridge.js' %}"></script>
+<script>
+// ── Theme toggle ──
+(function initTheme() {
+  const saved = localStorage.getItem('vet_theme') || 'dark';
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) btn.textContent = '☀️ Mode clair';
+  }
+})();
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = isLight ? '☀️ Mode clair' : '🌙 Mode nuit';
+  localStorage.setItem('vet_theme', isLight ? 'light' : 'dark');
+}
+
+// ── Mobile sidebar toggle ──
+function openSidebar() {
+  document.getElementById('vetSidebar').classList.add('open');
+  document.getElementById('vetOverlay').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('vetSidebar').classList.remove('open');
+  document.getElementById('vetOverlay').classList.remove('open');
+}
+// Close sidebar when a nav link is clicked on mobile
+document.querySelectorAll('.vet-nav-link').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    if (window.innerWidth <= 768) closeSidebar();
+  });
+});
+</script>
+<script src="{% static 'js/agrigov-chatbot.js' %}"></script>
+<script src="{% static 'js/pwa-register.js' %}"></script>
+
+<!-- ═══ MOBILE BOTTOM NAV — VÉTÉRINAIRE ═══ -->
+<nav class="m-bottom-nav m-bottom-nav-scroll" id="mBottomNav">
+  <button class="m-nav-tab active" id="mTab-dashboard" onclick="mVetTo('dashboard')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Accueil</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-notifications" onclick="mVetTo('notifications')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    <span>Notifs</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-alertes" onclick="mVetTo('alertes')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span>Alertes</span>
+  </button>
+  <div class="m-nav-fab-wrap" onclick="mVetTo('rendez-vous')">
+    <button class="m-nav-fab"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" width="26" height="26"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg></button>
+    <span class="m-nav-fab-label">Rendez-vous</span>
+  </div>
+  <button class="m-nav-tab" id="mTab-cabinet" onclick="mVetTo('cabinet')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    <span>Cabinet</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-disponibilites" onclick="mVetTo('disponibilites')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <span>Disponiblité</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-tournees" onclick="mVetTo('tournees')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 00-8 8c0 5.25 8 14 8 14s8-8.75 8-14a8 8 0 00-8-8z"/></svg>
+    <span>Tournées</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-profil" onclick="mVetTo('profil')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Profil</span>
+  </button>
+</nav>
+<script>
+function mVetTo(pageId) {
+  const btn = document.querySelector(`.vet-nav-link[data-page="${pageId}"]`);
+  if(btn && typeof showPage === 'function') { showPage(pageId, btn); }
+  else {
+    document.querySelectorAll('.vet-page').forEach(p => p.classList.remove('active'));
+    const page = document.getElementById('page-' + pageId);
+    if(page) { page.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+  }
+  document.querySelectorAll('.m-nav-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('mTab-' + pageId);
+  if(tab) { tab.classList.add('active'); tab.scrollIntoView({inline:'center',behavior:'smooth'}); }
+}
+document.querySelectorAll('.vet-nav-link').forEach(function(b){
+  b.addEventListener('click', function(){
+    const pid = this.getAttribute('data-page');
+    if(pid) { document.querySelectorAll('.m-nav-tab').forEach(t=>t.classList.remove('active'));
+      const t=document.getElementById('mTab-'+pid); if(t){t.classList.add('active');t.scrollIntoView({inline:'center',behavior:'smooth'});} }
+  });
+});
+</script>
+
+</body>
+</html>

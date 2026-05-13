@@ -1,0 +1,541 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Services</title>
+<link rel="stylesheet" href="{% static 'css/public-nav.css' %}">
+<link rel="stylesheet" href="{% static 'css/service.css' %}">
+
+<!-- PWA Mobile -->
+<meta name="theme-color" content="#2d7a2d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AgriGov">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
+</head>
+<body>
+
+<nav>
+  <div class="logo" onclick="location.href='{% url 'home' %}'">Agri<span>Gov</span></div>
+  <ul>
+    <li onclick="location.href='{% url 'home' %}'">Accueil</li>
+    <li onclick="scrollToId('intro')">Présentation</li>
+    <li onclick="scrollToId('services-section')">Services</li>
+    <li onclick="scrollToId('faq')">FAQ</li>
+    <li onclick="location.href='{% url 'contact' %}'" style="color:var(--gold)">Contact</li>
+  </ul>
+  <button class="nav-cta" onclick="location.href='{% url 'login' %}'">Se connecter</button>
+  <button class="nav-hamburger" id="navHamburger" aria-label="Menu" onclick="toggleMobileNav()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile Navigation Drawer -->
+<div class="nav-mobile-drawer" id="navMobileDrawer">
+  <button class="nav-mobile-close" onclick="closeMobileNav()">✕</button>
+  <ul>
+    <li><span class="nav-mob-link" onclick="closeMobileNav();location.href='{% url 'home' %}'">🏠 Accueil</span></li>
+    <li><span class="nav-mob-link" onclick="closeMobileNav();scrollToId('intro')">📄 Présentation</span></li>
+    <li><span class="nav-mob-link" onclick="closeMobileNav();scrollToId('services-section')">⚙️ Services</span></li>
+    <li><span class="nav-mob-link" onclick="closeMobileNav();scrollToId('faq')">❓ FAQ</span></li>
+    <li><span class="nav-mob-link" onclick="closeMobileNav();location.href='{% url 'contact' %}'">📞 Contact</span></li>
+  </ul>
+  <button class="nav-mob-cta" onclick="closeMobileNav();location.href='{% url 'login' %}'">Se connecter</button>
+</div>
+ 
+<!-- HERO -->
+<div class="page-hero">
+  <div class="page-hero-mesh"></div>
+  <div class="page-hero-grid"></div>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="hero-content">
+    <div class="hero-badge">Ministère de l'Agriculture · Services Officiels</div>
+    <h1>Nos <em>Services</em><br>pour vous</h1>
+    <p>Découvrez l'ensemble des services proposés par la plate-forme AgriGov Market, conçus pour moderniser et digitaliser le secteur agricole algérien.</p>
+  </div>
+</div>
+ 
+<!-- MAIN LAYOUT -->
+<div class="services-layout">
+ 
+  <!-- MAIN -->
+  <main class="main-content">
+ 
+    <!-- 1. PRÉSENTATION -->
+    <section class="content-section" id="intro">
+      <div class="section-pill">Présentation</div>
+      <h2 class="section-main-title">Qu'est-ce qu'<em>AgriGov Market</em> ?</h2>
+      <p class="section-lead">AgriGov Market est la plateforme numérique officielle du Ministère de l'Agriculture algérien, qui connecte les agriculteurs, les acheteurs et les transporteurs afin de faciliter les échanges de produits agricoles d'une manière directe, organisée et transparente, tout en assurant la qualité et le suivi des opérations.</p>
+ 
+      <div class="intro-grid">
+        <div class="intro-card">
+          <div class="intro-card-num">01</div>
+          <div class="intro-card-icon">🎯</div>
+          <div class="intro-card-title">Mission principale</div>
+          <div class="intro-card-text">Digitaliser et moderniser le secteur agricole algérien en facilitant les échanges commerciaux entre agriculteurs, acheteurs, transporteurs et professionnels du domaine.</div>
+        </div>
+        <div class="intro-card dark">
+          <div class="intro-card-num">02</div>
+          <div class="intro-card-icon">🌍</div>
+          <div class="intro-card-title">Contexte de création</div>
+          <div class="intro-card-text">Dans le cadre de la stratégie nationale de numérisation, AgriGov Market répond à l'urgence de moderniser la chaîne agricole pour assurer la sécurité alimentaire et renforcer l'économie nationale.</div>
+        </div>
+        <div class="intro-card">
+          <div class="intro-card-num">03</div>
+          <div class="intro-card-icon">🔐</div>
+          <div class="intro-card-title">Plateforme sécurisée</div>
+          <div class="intro-card-text">Chaque transaction, profil et échange est supervisé directement par le Ministère de l'Agriculture, garantissant une totale transparence et une sécurité optimale pour tous les utilisateurs.</div>
+        </div>
+        <div class="intro-card">
+          <div class="intro-card-num">04</div>
+          <div class="intro-card-icon">🇩🇿</div>
+          <div class="intro-card-title">Couverture nationale</div>
+          <div class="intro-card-text">La plateforme couvre l'ensemble des 69 wilayas d'Algérie, offrant aux acteurs agricoles une portée nationale sans précédent pour leurs activités commerciales.</div>
+        </div>
+      </div>
+    </section>
+ 
+    <div class="content-divider"></div>
+ 
+    <!-- 2. OBJECTIFS -->
+    <section class="content-section" id="objectifs">
+      <div class="section-pill">Objectifs & Avantages</div>
+      <h2 class="section-main-title">Pourquoi choisir <em>AgriGov</em> ?</h2>
+      <p class="section-lead">Cette plateforme a été mise en place afin de répondre aux problématiques concrètes du secteur agricole en Algérie, tout en visant une modernisation durable et une plus grande équité.</p>
+ 
+      <div class="objectives-list">
+        <div class="objective-item">
+          <div class="obj-icon">🤝</div>
+          <div class="obj-content">
+            <h4>Connexion directe entre les acteurs</h4>
+            <p>Éliminer les intermédiaires inutiles en mettant en relation directe les agriculteurs avec les acheteurs et les transporteurs, réduisant ainsi les coûts et améliorant la rentabilité pour chaque partie.</p>
+          </div>
+        </div>
+        <div class="objective-item">
+          <div class="obj-icon">📈</div>
+          <div class="obj-content">
+            <h4>Transparence des prix</h4>
+            <p>Afficher des prix encadrés et vérifiés par le ministère afin de lutter contre la spéculation, garantir l'équité du marché et protéger aussi bien les producteurs que les consommateurs.</p>
+          </div>
+        </div>
+        <div class="objective-item">
+          <div class="obj-icon">🚚</div>
+          <div class="obj-content">
+            <h4>Optimisation de la chaîne d'approvisionnement</h4>
+            <p>Réduire les délais de livraison et les pertes post-récolte grâce à un réseau logistique certifié et des outils de suivi en temps réel intégrés à la plateforme.</p>
+          </div>
+        </div>
+        <div class="objective-item">
+          <div class="obj-icon">🌱</div>
+          <div class="obj-content">
+            <h4>Encourager l'économie locale et durable</h4>
+            <p>Valoriser les productions locales, encourager les circuits courts et soutenir une agriculture durable qui respecte l'environnement et renforce l'autosuffisance alimentaire de l'Algérie.</p>
+          </div>
+        </div>
+        <div class="objective-item">
+          <div class="obj-icon">🛡️</div>
+          <div class="obj-content">
+            <h4>Sécuriser les transactions</h4>
+            <p>Chaque paiement est sécurisé, tracé et supervisé par les autorités compétentes, protégeant les parties de toute fraude ou litige commercial.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+ 
+    <div class="content-divider"></div>
+ 
+    <!-- 3. SERVICES -->
+    <section class="content-section" id="services-section">
+      <div class="section-pill">Description des Services</div>
+      <h2 class="section-main-title">Un service pour <em>chaque acteur</em></h2>
+      <p class="section-lead">AgriGov Market propose des fonctionnalités adaptées à chaque rôle au sein de la chaîne agricole nationale.</p>
+    </section>
+ 
+    <!-- AGRICULTEURS -->
+    <section class="content-section" id="agriculteurs">
+      <div class="service-detail">
+        <div class="service-detail-header agriculteur">
+          <div class="svc-icon-big agriculteur">🌾</div>
+          <div class="svc-header-text">
+            <h3>Agriculteurs</h3>
+            <p>La plateforme offre aux agriculteurs un espace numérique complet pour gérer leurs exploitations, publier leurs produits et accéder au marché national sans intermédiaires.</p>
+          </div>
+        </div>
+        <div class="service-detail-body agriculteur">
+          <div class="svc-features">
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Publication des récoltes</strong> — Publiez vos produits avec photos, quantités disponibles et tarifs en quelques clics.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Gestion des stocks</strong> — Suivez vos inventaires en temps réel et recevez des alertes de réapprovisionnement.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Paiements sécurisés</strong> — Recevez vos paiements de manière sécurisée, sans risque d'impayés.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Accès national</strong> — Vendez à des acheteurs dans toutes les wilayas d'Algérie depuis votre ferme.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Tableau de bord</strong> — Visualisez vos performances de vente, l'historique de transactions et les tendances du marché.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Profil vérifié</strong> — Bénéficiez d'un badge de confiance après vérification de votre dossier par le ministère.</p></div>
+          </div>
+          <div class="svc-cta-row">
+            <a href="{% url 'ensavoir' %}#agriculteurs" class="svc-btn primary">En savoir plus →</a>
+            <a href="{% url 'register' %}" class="svc-btn outline">Créer un compte</a>
+          </div>
+        </div>
+      </div>
+    </section>
+ 
+    <!-- ACHETEURS -->
+    <section class="content-section" id="acheteurs">
+      <div class="service-detail">
+        <div class="service-detail-header acheteur">
+          <div class="svc-icon-big acheteur">🛒</div>
+          <div class="svc-header-text">
+            <h3>Acheteurs</h3>
+            <p>Accédez à un marché agricole structuré, transparent et sécurisé. Approvisionnez-vous directement auprès des producteurs à des prix réglementés.</p>
+          </div>
+        </div>
+        <div class="service-detail-body acheteur">
+          <div class="svc-features">
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Catalogue complet</strong> — Parcourez des milliers de produits agricoles classés par type, région et certification.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Prix encadrés</strong> — Bénéficiez de prix officiellement régulés et transparents, sans mauvaises surprises.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Certifications vérifiées</strong> — Consultez les certifications de qualité et d'origine de chaque producteur.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Commandes en ligne</strong> — Passez vos commandes en quelques clics et suivez leur statut en temps réel.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Historique des achats</strong> — Retrouvez facilement vos commandes passées et relancez rapidement un achat.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Paiements sécurisés</strong> — Transactions protégées avec des garanties de remboursement en cas de litige.</p></div>
+          </div>
+          <div class="svc-cta-row">
+            <a href="{% url 'ensavoir' %}#acheteurs" class="svc-btn primary" style="background:#1a3a5c;">En savoir plus →</a>
+            <a href="{% url 'register' %}" class="svc-btn outline">Créer un compte</a>
+          </div>
+        </div>
+      </div>
+    </section>
+ 
+    <!-- TRANSPORTEURS -->
+    <section class="content-section" id="transporteurs">
+      <div class="service-detail">
+        <div class="service-detail-header transporteur">
+          <div class="svc-icon-big transporteur">🚛</div>
+          <div class="svc-header-text">
+            <h3>Transporteurs</h3>
+            <p>Rejoignez le réseau logistique officiel d'AgriGov et optimisez vos activités de transport agricole avec des outils modernes et des missions géolocalisées.</p>
+          </div>
+        </div>
+        <div class="service-detail-body transporteur">
+          <div class="svc-features">
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Missions géolocalisées</strong> — Recevez des demandes de livraison proches de votre position, en temps réel.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Optimisation des trajets</strong> — Des outils intégrés vous aident à planifier les routes les plus efficaces.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Réseau certifié</strong> — Votre profil vérifié inspire la confiance des agriculteurs et acheteurs.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Mise à jour du statut des livraisons</strong> — Changez le statut des livraisons afin que l’acheteur et l’agriculteur puissent suivre leur progression en temps réel.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Revenus optimisés</strong> — Réduisez les trajets à vide grâce au système d'appariement intelligent de missions.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Tableau de bord transport</strong> — Gérez votre flotte, vos missions et vos revenus depuis un espace dédié.</p></div>
+          </div>
+          <div class="svc-cta-row">
+            <a href="{% url 'ensavoir' %}#transporteurs" class="svc-btn primary" style="background:#3d1f00;">En savoir plus →</a>
+            <a href="{% url 'register' %}" class="svc-btn outline">Créer un compte</a>
+          </div>
+        </div>
+      </div>
+    </section>
+ 
+    <!-- ADMINISTRATION -->
+    <section class="content-section" id="administration">
+      <div class="service-detail">
+        <div class="service-detail-header administration">
+          <div class="svc-icon-big administration">🏛️</div>
+          <div class="svc-header-text">
+            <h3>Administration</h3>
+            <p>Un tableau de bord de supervision complet pour le Ministère de l'Agriculture, permettant une régulation efficace et une traçabilité totale du marché agricole national.</p>
+          </div>
+        </div>
+        <div class="service-detail-body administration">
+          <div class="svc-features">
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Supervision des transactions</strong> — Surveillance en temps réel de toutes les transactions réalisées sur la plateforme.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Régulation des prix</strong> — Définir et ajuster les prix officiels pour chaque produit agricole.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Tableaux analytiques</strong> — Des rapports détaillés pour orienter la politique agricole nationale.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Gestion des utilisateurs</strong> — Valider, suspendre ou certifier des profils selon les réglementations en vigueur.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Traçabilité complète</strong> — Un historique immuable de chaque produit, de la ferme jusqu'à l'acheteur final.</p></div>
+            <div class="svc-feature"><div class="svc-feature-dot"></div><p><strong>Alertes & notifications</strong> — Recevez des alertes en cas d'écart de prix, de tentative de fraude ou d'incidents suspects.</p></div>
+          </div>
+          <div class="svc-cta-row">
+            <a href="{% url 'ensavoir' %}#administration" class="svc-btn primary" style="background:#0a2e16;">En savoir plus →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+ 
+    <!-- AUTRES -->
+    <section class="content-section" id="autres">
+      <div class="service-detail">
+        <div class="service-detail-header autres">
+          <div class="svc-icon-big autres">💡</div>
+          <div class="svc-header-text">
+            <h3>Autres Professionnels</h3>
+            <p>AgriGov Market intègre également des professionnels spécialisés essentiels à l'écosystème agricole : vétérinaires et organismes de protection des plantes.</p>
+          </div>
+        </div>
+        <div class="service-detail-body autres">
+          <div class="autres-sub">
+            <div class="autres-card">
+              <div class="autres-card-icon">🐄</div>
+              <div class="autres-card-title">Vétérinaires</div>
+              <div class="autres-card-text">Les vétérinaires jouent un rôle crucial dans la santé du bétail et la qualité des produits d'élevage. Sur AgriGov, ils peuvent :</div>
+              <ul class="autres-list">
+                <li>Offrir des consultations à distance pour les exploitations éloignées</li>
+                <li>Certifier la santé des animaux destinés à la vente</li>
+                <li>Notifier les maladies et coordonner les soins animaux</li>
+                <li>Publier des recommandations de soins préventifs pour les éleveurs</li>
+                <li>Collaborer avec les autorités pour le suivi épidémiologique du cheptel national</li>
+              </ul>
+            </div>
+            <div class="autres-card">
+              <div class="autres-card-icon">🌿</div>
+              <div class="autres-card-title">Protection des Plantes</div>
+              <div class="autres-card-text">Les organismes phytosanitaires assurent la protection des cultures végétales contre les maladies et ravageurs. Ils peuvent :</div>
+              <ul class="autres-list">
+                <li>Diagnostiquer et traiter les maladies des cultures agricoles</li>
+                <li>Émettre des certificats phytosanitaires pour la mise en marché</li>
+                <li>Alerter les agriculteurs sur les risques de ravageurs saisonniers</li>
+                <li>Conseiller sur l'utilisation raisonnée des pesticides et biocides</li>
+                <li>Soutenir le passage vers une agriculture biologique et durable</li>
+              </ul>
+            </div>
+          </div>
+          <div class="svc-cta-row" style="margin-top:24px;">
+            <a href="{% url 'ensavoir' %}#autres" class="svc-btn primary" style="background:#4a1050;">En savoir plus →</a>
+            <a href="{% url 'register' %}" class="svc-btn outline">Créer un compte</a>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <div class="content-divider"></div>
+ 
+    <!-- STATS -->
+    <section class="content-section" id="stats">
+      <div class="section-pill">Chiffres Clés</div>
+      <h2 class="section-main-title">AgriGov en <em>chiffres</em></h2>
+      <p class="section-lead">Des indicateurs qui témoignent de la confiance que les acteurs de l'agriculture algérienne accordent à notre plateforme.</p>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num">0<span></span></div><div class="stat-label">Acteurs de l'agriculture inscrits</div></div>
+        <div class="stat-card"><div class="stat-num">0<span></span></div><div class="stat-label">Wilayas couvertes</div></div>
+        <div class="stat-card"><div class="stat-num">0<span></span></div><div class="stat-label">Transactions réalisées</div></div>
+        <div class="stat-card"><div class="stat-num">0<span></span></div><div class="stat-label">Taux de satisfaction</div></div>
+      </div>
+    </section>
+ 
+    <div class="content-divider"></div>
+ 
+    <!-- TESTIMONIALS -->
+    <section class="content-section" id="temoignages">
+      <div class="section-pill">Témoignages</div>
+      <h2 class="section-main-title">Ce qu'ils en <em>disent</em></h2>
+      <p class="section-lead">Beaucoup de personnes ayant déjà utilisé notre service ont placé leur confiance en nous et en la plate-forme AgriGov Market. Voici quelques témoignages de nos utilisateurs.</p>
+      <div class="testimonials-grid">
+        <div class="testi-card">
+          <div class="testi-quote">"</div>
+          <div class="stars">★★★★★</div>
+          <div class="testi-text">Grâce à AgriGov, j'ai pu vendre ma récolte de tomates à des prix justes, directement à des supermarchés à Constantine. Je n'ai plus besoin d'intermédiaires qui prenaient 30% de mes revenus.</div>
+          <div class="testi-author">
+            <div class="testi-avatar">🌾</div>
+            <div><div class="testi-name">Youcef B.</div><div class="testi-role">Agriculteur · Setif</div></div>
+          </div>
+        </div>
+        <div class="testi-card">
+          <div class="testi-quote">"</div>
+          <div class="stars">★★★★★</div>
+          <div class="testi-text">La transparence des prix et la qualité des produits certifiés ont transformé notre chaîne d'approvisionnement. Nous économisons 20% sur nos coûts d'achat chaque mois.</div>
+          <div class="testi-author">
+            <div class="testi-avatar">🛒</div>
+            <div><div class="testi-name">Zahra T.</div><div class="testi-role">Directrice achats · Constantine</div></div>
+          </div>
+        </div>
+        <div class="testi-card">
+          <div class="testi-quote">"</div>
+          <div class="stars">★★★★☆</div>
+          <div class="testi-text">Mes camions ne font plus de trajets à vide. Le système me propose toujours des missions de retour. Mon chiffre d'affaires a augmenté de 40% en seulement six mois.</div>
+          <div class="testi-author">
+            <div class="testi-avatar">🚛</div>
+            <div><div class="testi-name">Rachid M.</div><div class="testi-role">Transporteur · Oran</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+ 
+    <div class="content-divider"></div>
+ 
+    <!-- FAQ -->
+    <section class="content-section" id="faq">
+      <div class="section-pill">FAQ</div>
+      <h2 class="section-main-title">Questions <em>fréquentes</em></h2>
+      <p class="section-lead">Vous avez des questions ? Voici les réponses aux interrogations les plus courantes de nos utilisateurs.</p>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <h4>L'inscription sur AgriGov Market est-elle gratuite ?</h4>
+            <button class="faq-toggle">+</button>
+          </div>
+          <div class="faq-answer">Oui, l'inscription de base est entièrement gratuite pour tous les profils (agriculteurs, acheteurs, transporteurs, autres professionnels). Des options premium sont disponibles pour des fonctionnalités avancées.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <h4>Comment sont vérifiés les profils des utilisateurs ?</h4>
+            <button class="faq-toggle">+</button>
+          </div>
+          <div class="faq-answer">Chaque profil est vérifié par les équipes du Ministère de l'Agriculture via des documents officiels (registre de commerce, attestations professionnelles, documents de ferme...etc). Ce processus peut prendre 24 à 72 heures.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <h4>Les paiements sont-ils sécurisés sur la plateforme ?</h4>
+            <button class="faq-toggle">+</button>
+          </div>
+          <div class="faq-answer">Le paiment se fait main à main, mais tout est supervisé par le ministère, et tout problème sera immédiatement compensé.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <h4>Puis-je utiliser la plateforme depuis mon téléphone ?</h4>
+            <button class="faq-toggle">+</button>
+          </div>
+          <div class="faq-answer">Oui, AgriGov Market est entièrement responsive et optimisé pour les appareils mobiles. Une application mobile dédiée (iOS et Android) sera disponible prochainement.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <h4>Comment un vétérinaire peut-il rejoindre la plateforme ?</h4>
+            <button class="faq-toggle">+</button>
+          </div>
+          <div class="faq-answer">Les vétérinaires peuvent s'inscrire via le formulaire "Autres" en sélectionnant leur spécialité. Il faudra fournir un diplôme de vétérinaire reconnu par le Ministère de l'Agriculture et une attestation d'exercice en cours.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <h4>Que faire en cas de litige avec les autres utilisateurs ?</h4>
+            <button class="faq-toggle">+</button>
+          </div>
+          <div class="faq-answer">La plate-forme dispose un service de médiation officiel. Il vous suffit de vous rendre dans la section "Contact" de la plate-forme et d'envoyer votre problème. Nous le traiterons et vous répondrons dans un délai maximum de cinq jours.</div>
+        </div>
+      </div>
+    </section>
+ 
+    <div class="content-divider"></div>
+ 
+    <!-- CTA -->
+    <section class="content-section">
+      <div class="cta-section">
+        <h2>Prêt à rejoindre la révolution agricole ?</h2>
+        <p>Les données de la plateforme se synchronisent en temps réel depuis la base AgriGov Market. Inscrivez-vous gratuitement dès aujourd'hui.</p>
+        <div class="cta-actions">
+          <button class="btn-cta-primary" onclick="location.href='{% url 'register' %}'">Créer mon compte gratuitement →</button>
+          <button class="btn-cta-secondary" onclick="location.href='{% url 'login' %}'">Se connecter</button>
+        </div>
+      </div>
+    </section>
+ 
+  </main>
+
+  <!-- SIDEBAR — right side -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-label">Navigation</div>
+      <div class="sidebar-title">Services<br>disponibles</div>
+    </div>
+    <div class="sidebar-cta">
+      <a href="{% url 'register' %}" class="sidebar-cta-btn">Créer un compte →</a>
+      <a href="{% url 'login' %}" class="sidebar-cta-btn secondary">Se connecter</a>
+    </div>
+  </aside>
+
+</div>
+ 
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <div class="footer-logo">Agri<span>Gov</span> Market</div>
+      <div class="footer-desc">Connecter l'agriculture algérienne à l'ère numérique, sous la supervision du Ministère de l'Agriculture.</div>
+    </div>
+    <div class="footer-links">
+      <h4>Plateforme</h4>
+      <ul>
+        <li onclick="location.href='{% url 'home' %}'">Accueil</li>
+        <li onclick="location.href='{% url 'services' %}'">Services</li>
+        <li onclick="location.href='{% url 'contact' %}'">Contact</li>
+      </ul>
+    </div>
+    <div class="footer-links">
+      <h4>Services</h4>
+      <ul>
+        <li onclick="scrollToId('agriculteurs')">Agriculteurs</li>
+        <li onclick="scrollToId('acheteurs')">Acheteurs</li>
+        <li onclick="scrollToId('transporteurs')">Transporteurs</li>
+        <li onclick="scrollToId('administration')">Administration</li>
+        <li onclick="scrollToId('autres')">Autres</li>
+      </ul>
+    </div>
+    <div class="footer-links">
+      <h4>Compte</h4>
+      <ul>
+        <li onclick="location.href='{% url 'login' %}'">Connexion</li>
+        <li onclick="location.href='{% url 'register' %}'">Inscription</li>
+        <li onclick="location.href='{% url 'contact' %}'">Contact</li>
+      </ul>
+    </div>
+    <div class="footer-links">
+      <h4>Légal</h4>
+      <ul>
+        <li>Conditions d'utilisation</li>
+        <li>Politique de confidentialité</li>
+        <li>Mentions légales</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 AgriGov Market · Ministère de l'Agriculture, Algérie</span>
+    <span>Tous droits réservés</span>
+  </div>
+</footer>
+
+<script src="{% static 'js/service.js' %}"></script>
+<script src="{% static 'js/agrigov-chatbot.js' %}"></script>
+<script src="{% static 'js/pwa-register.js' %}"></script>
+<script>
+function toggleMobileNav(){var d=document.getElementById('navMobileDrawer'),h=document.getElementById('navHamburger');d.classList.toggle('open');h.classList.toggle('open');document.body.classList.toggle('nav-open');}
+function closeMobileNav(){var d=document.getElementById('navMobileDrawer'),h=document.getElementById('navHamburger');d.classList.remove('open');h.classList.remove('open');document.body.classList.remove('nav-open');}
+document.getElementById('navMobileDrawer').addEventListener('click',function(e){if(e.target===this)closeMobileNav();});
+</script>
+
+<script>
+/* ── Shared Public Nav JS ── */
+(function() {
+  // Scroll effect
+  var nav = document.querySelector('nav');
+  if(nav) {
+    window.addEventListener('scroll', function() {
+      nav.classList.toggle('scrolled', window.scrollY > 50);
+    });
+  }
+  // Scroll to section helper
+  window.scrollToId = function(id) {
+    var el = document.getElementById(id);
+    if(el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+})();
+
+function toggleMobileNav() {
+  var drawer = document.getElementById('navMobileDrawer');
+  if(drawer) {
+    var isOpen = drawer.classList.contains('open');
+    drawer.classList.toggle('open', !isOpen);
+    document.body.style.overflow = isOpen ? '' : 'hidden';
+  }
+}
+function closeMobileNav() {
+  var drawer = document.getElementById('navMobileDrawer');
+  if(drawer) { drawer.classList.remove('open'); document.body.style.overflow = ''; }
+}
+// Close on backdrop click
+document.addEventListener('DOMContentLoaded', function() {
+  var drawer = document.getElementById('navMobileDrawer');
+  if(drawer) drawer.addEventListener('click', function(e) { if(e.target===this) closeMobileNav(); });
+});
+</script>
+</body>
+</html>

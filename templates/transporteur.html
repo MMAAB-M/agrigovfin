@@ -1,0 +1,577 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriGov — Dashboard Transporteur</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="{% static 'css/transporteur.css' %}">
+  <link rel="stylesheet" href="{% static 'css/transpo-advanced.css' %}">
+
+<!-- PWA Mobile -->
+<meta name="theme-color" content="#2d7a2d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AgriGov">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
+<link rel="stylesheet" href="{% static 'css/pwa-mobile.css' %}">
+</head>
+<body>
+<div class="tp-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="tp-sidebar" id="tpSidebar">
+    <div class="tp-sidebar-brand">
+      <div class="tp-brand-icon">🚚</div>
+      <div class="tp-brand-text"><strong>AgriGov</strong><span>Transport Panel</span></div>
+      <button class="tp-sidebar-close" id="tpSidebarClose">✕</button>
+    </div>
+
+    <div class="tp-driver-card">
+      <img id="tpSidebarAvatar" src="{% if request.user.profile.profile_photo %}{{ request.user.profile.profile_photo.url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%25' height='100%25' fill='%231f6f43'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='32' fill='%23fff'>{{ request.user.first_name|default:request.user.username|first|upper }}</text></svg>{% endif %}" alt="avatar" />
+      <div>
+        <strong id="tpSidebarName">{{ request.user.get_full_name|default:request.user.username }}</strong>
+        <span id="tpSidebarRole">Transporteur</span>
+        <div class="tp-completion-bar"><div class="tp-completion-fill" id="tpCompletionFill" style="width:0%"></div></div>
+        <small id="tpCompletionLabel">Profil : 0%</small>
+      </div>
+    </div>
+
+    <nav class="tp-nav">
+      <a class="tp-nav-link active" data-page="tpDashboardPage" href="#tpDashboardPage">
+        <span class="tp-nav-icon"><i class="fa-solid fa-chart-line"></i></span><span>Tableau de bord</span>
+      </a>
+      <a class="tp-nav-link" data-page="tpMissionsPage" href="#tpMissionsPage">
+        <span class="tp-nav-icon"><i class="fa-solid fa-box"></i></span><span>Missions disponibles</span>
+        <span class="tp-nav-badge" id="tpMissionsBadge" style="display:none">0</span>
+      </a>
+      <a class="tp-nav-link" data-page="tpLivraisonsPage" href="#tpLivraisonsPage">
+        <span class="tp-nav-icon"><i class="fa-solid fa-truck"></i></span><span>Mes livraisons</span>
+        <span class="tp-nav-badge tp-nav-badge-blue" id="tpLivraisonsBadge" style="display:none">0</span>
+      </a>
+      <a class="tp-nav-link" data-page="tpPlanningPage" href="#tpPlanningPage">
+        <span class="tp-nav-icon"><i class="fa-solid fa-calendar-days"></i></span><span>Planning</span>
+      </a>
+      <a class="tp-nav-link" data-page="tpCartePage" href="#tpCartePage">
+        <span class="tp-nav-icon"><i class="fa-solid fa-map-location-dot"></i></span><span>Carte en temps réel</span>
+      </a>
+      <a class="tp-nav-link" data-page="tpNotificationsPage" href="#tpNotificationsPage">
+        <span class="tp-nav-icon"><i class="fa-regular fa-bell"></i></span><span>Notifications</span>
+        <span class="tp-nav-badge tp-nav-badge-red" id="tpNotifBadge" style="display:none">0</span>
+      </a>
+      <a class="tp-nav-link" data-page="tpHistoriquePage" href="#tpHistoriquePage">
+        <span class="tp-nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span><span>Historique</span>
+      </a>
+      <a class="tp-nav-link" data-page="tpProfilPage" href="#tpProfilPage">
+        <span class="tp-nav-icon"><i class="fa-solid fa-user-gear"></i></span><span>Mon profil</span>
+      </a>
+    </nav>
+
+    <div class="tp-sidebar-footer">
+      <a href="{% url 'logout' %}" class="tp-logout-btn m-desktop-only">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Déconnexion</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="tp-main">
+
+    <!-- Topbar -->
+    <header class="tp-topbar" id="tpTopbar">
+      <button class="tp-hamburger" id="tpHamburger"><i class="fa-solid fa-bars"></i></button>
+      <div class="tp-topbar-title">
+        <h1 id="tpPageTitle">Tableau de bord</h1>
+        <p id="tpPageSubtitle">Bienvenue dans votre espace transporteur AgriGov</p>
+      </div>
+      <div class="tp-topbar-actions">
+        <div class="tp-search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="tpGlobalSearch" placeholder="Rechercher..." autocomplete="off" />
+        </div>
+        <button class="tp-icon-btn" id="tpNotifBtn" title="Notifications">
+          <i class="fa-regular fa-bell"></i>
+          <span class="tp-topbar-badge" id="tpTopbarNotifBadge" style="display:none">0</span>
+        </button>
+        <button class="tp-icon-btn" id="tpThemeBtn" title="Mode nuit/jour">
+          <i class="fa-solid fa-moon" id="tpThemeIcon"></i>
+        </button>
+        <div class="tp-topbar-profile">
+          <img id="tpTopbarAvatar" src="{% if request.user.profile.profile_photo %}{{ request.user.profile.profile_photo.url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%25' height='100%25' fill='%231f6f43'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='32' fill='%23fff'>{{ request.user.first_name|default:request.user.username|first|upper }}</text></svg>{% endif %}" alt="profil" />
+          <span id="tpTopbarName">{{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <section class="tp-page active" id="tpDashboardPage">
+      <div class="tp-kpi-grid">
+        <div class="tp-kpi-card tp-kpi-green">
+          <div class="tp-kpi-icon"><i class="fa-solid fa-box-open"></i></div>
+          <div class="tp-kpi-body"><span>Missions dispo</span><h2 id="kpiMissions">—</h2><p id="kpiMissionsLabel">Chargement...</p></div>
+        </div>
+        <div class="tp-kpi-card tp-kpi-blue">
+          <div class="tp-kpi-icon"><i class="fa-solid fa-truck-fast"></i></div>
+          <div class="tp-kpi-body"><span>En cours</span><h2 id="kpiEnCours">—</h2><p id="kpiEnCoursLabel">Chargement...</p></div>
+        </div>
+        <div class="tp-kpi-card tp-kpi-orange">
+          <div class="tp-kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="tp-kpi-body"><span>Livrées</span><h2 id="kpiLivrees">—</h2><p id="kpiLivreesLabel">Total cumulé</p></div>
+        </div>
+        <div class="tp-kpi-card tp-kpi-purple">
+          <div class="tp-kpi-icon"><i class="fa-solid fa-star"></i></div>
+          <div class="tp-kpi-body"><span>Profil</span><h2 id="kpiProfil">—%</h2><p id="kpiProfilLabel">Complétude</p></div>
+        </div>
+      </div>
+
+      <div class="tp-row-2col">
+        <div class="tp-panel">
+          <div class="tp-panel-head">
+            <h3><i class="fa-solid fa-chart-bar"></i> Activité</h3>
+            <div class="tp-chart-tabs" id="tpChartTabs">
+              <button class="active" data-range="7">7j</button>
+              <button data-range="14">14j</button>
+              <button data-range="30">30j</button>
+            </div>
+          </div>
+          <canvas id="tpActivityChart" height="160"></canvas>
+        </div>
+        <div class="tp-panel">
+          <div class="tp-panel-head">
+            <h3><i class="fa-solid fa-route"></i> Prochaines livraisons</h3>
+            <button class="tp-refresh-btn" id="tpRefreshPlanning"><i class="fa-solid fa-rotate-right"></i></button>
+          </div>
+          <div id="tpDashPlanning" class="tp-dash-planning">
+            <div class="tp-empty-state"><i class="fa-solid fa-calendar-xmark"></i><p>Aucune livraison planifiée</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tp-row-2col">
+        <div class="tp-panel">
+          <div class="tp-panel-head">
+            <h3><i class="fa-solid fa-list-check"></i> Dernières commandes</h3>
+            <button class="tp-link-btn" data-goto="tpHistoriquePage">Voir tout →</button>
+          </div>
+          <div class="tp-table-wrap">
+            <table class="tp-table">
+              <thead><tr><th>ID</th><th>Client</th><th>Destination</th><th>Statut</th><th>Total</th></tr></thead>
+              <tbody id="tpDashTable"><tr><td colspan="5" class="tp-table-empty">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="tp-panel">
+          <div class="tp-panel-head"><h3><i class="fa-solid fa-gauge-high"></i> Résumé rapide</h3></div>
+          <div class="tp-summary">
+            <div class="tp-summary-row"><span>Missions disponibles</span><strong id="sumMissions">—</strong></div>
+            <div class="tp-summary-row"><span>Livraisons en cours</span><strong id="sumEnCours">—</strong></div>
+            <div class="tp-summary-row"><span>Livraisons terminées</span><strong id="sumLivrees">—</strong></div>
+            <div class="tp-summary-row"><span>Véhicule</span><strong id="sumVehicle">—</strong></div>
+            <div class="tp-summary-row"><span>Zone principale</span><strong id="sumZone">—</strong></div>
+            <div class="tp-summary-row"><span>Complétion profil</span><strong id="sumProfil">—%</strong></div>
+          </div>
+          <button class="tp-btn tp-btn-primary" data-goto="tpMissionsPage" style="margin-top:16px;width:100%">
+            <i class="fa-solid fa-bolt"></i> Voir les missions disponibles
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ MISSIONS ═══ -->
+    <section class="tp-page" id="tpMissionsPage">
+      <div class="tp-page-header">
+        <div><h2><i class="fa-solid fa-box"></i> Missions disponibles</h2><p>Commandes confirmées en attente d'un transporteur</p></div>
+        <div class="tp-header-actions">
+          <div class="tp-search-wrap sm"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="tpMissionsSearch" placeholder="Filtrer..." /></div>
+          <select class="tp-select" id="tpMissionsWilayaFilter"><option value="">Toutes les wilayas</option></select>
+          <button class="tp-btn tp-btn-outline" id="tpRefreshMissions"><i class="fa-solid fa-rotate-right"></i> Actualiser</button>
+        </div>
+      </div>
+      <div id="tpMissionsGrid" class="tp-cards-grid"><div class="tp-loading-state"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div></div>
+    </section>
+
+    <!-- ═══ LIVRAISONS ═══ -->
+    <section class="tp-page" id="tpLivraisonsPage">
+      <div class="tp-page-header">
+        <div><h2><i class="fa-solid fa-truck"></i> Mes livraisons</h2><p>Commandes que vous êtes en train de livrer</p></div>
+        <div class="tp-header-actions">
+          <select class="tp-select" id="tpLivraisonsFilter"><option value="all">Toutes</option><option value="expediee">Expédiées</option><option value="livree">Livrées</option></select>
+          <button class="tp-btn tp-btn-outline" id="tpRefreshLivraisons"><i class="fa-solid fa-rotate-right"></i> Actualiser</button>
+        </div>
+      </div>
+      <div id="tpLivraisonsGrid" class="tp-cards-grid"><div class="tp-loading-state"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div></div>
+    </section>
+
+    <!-- ═══ PLANNING ═══ -->
+    <section class="tp-page" id="tpPlanningPage">
+      <div class="tp-page-header">
+        <div><h2><i class="fa-solid fa-calendar-days"></i> Planning livraisons</h2><p>Agenda dynamique de vos missions et livraisons</p></div>
+        <div class="tp-header-actions">
+          <div class="tp-search-wrap sm"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="tpPlanningSearch" placeholder="Filtrer..." /></div>
+          <select class="tp-select" id="tpPlanningFilter"><option value="all">Tout</option><option value="mission">Missions</option><option value="livraison">Livraisons</option></select>
+        </div>
+      </div>
+      <div id="tpPlanningTimeline" class="tp-timeline"><div class="tp-loading-state"><i class="fa-solid fa-spinner fa-spin"></i> Construction du planning...</div></div>
+    </section>
+
+    <!-- ═══ CARTE ═══ -->
+    <section class="tp-page" id="tpCartePage">
+      <div class="tp-page-header">
+        <div><h2><i class="fa-solid fa-map-location-dot"></i> Carte en temps réel</h2><p>Visualisez vos trajets et votre position GPS en direct</p></div>
+        <div class="tp-carte-header-actions">
+          <span class="tp-locate-badge" id="tpLocateBadge">📍 GPS actif</span>
+          <button class="tp-btn-track" id="tpTrackBtn" onclick="toggleRealTracking()">
+            <i class="fa-solid fa-location-crosshairs"></i> Me localiser
+          </button>
+          <select class="tp-select" id="tpCarteFilter"><option value="all">Tout</option><option value="mission">Missions dispo</option><option value="livraison">En cours</option></select>
+          <button class="tp-btn tp-btn-outline" id="tpCarteRefresh"><i class="fa-solid fa-rotate-right"></i> Actualiser</button>
+        </div>
+      </div>
+      <div class="tp-carte-layout">
+        <div class="tp-carte-sidebar-list">
+          <h4>Trajets actifs</h4>
+          <div id="tpCarteList" class="tp-carte-list"><div class="tp-empty-state"><i class="fa-solid fa-map-pin"></i><p>Aucun trajet actif</p></div></div>
+        </div>
+        <div class="tp-map-wrap"><div id="tpLeafletMap" style="width:100%;height:100%;border-radius:16px;min-height:420px;"></div></div>
+      </div>
+    </section>
+
+    <!-- ═══ NOTIFICATIONS ═══ -->
+    <section class="tp-page" id="tpNotificationsPage">
+      <div class="tp-page-header">
+        <div><h2><i class="fa-regular fa-bell"></i> Notifications</h2><p>Alertes missions, livraisons et profil</p></div>
+        <div class="tp-header-actions">
+          <button class="tp-btn tp-btn-outline" id="tpMarkAllRead"><i class="fa-solid fa-check-double"></i> Tout marquer lu</button>
+          <button class="tp-btn tp-btn-outline" id="tpRefreshNotifs"><i class="fa-solid fa-rotate-right"></i> Actualiser</button>
+        </div>
+      </div>
+      <div id="tpNotificationsContainer" class="tp-notif-list"><div class="tp-loading-state"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div></div>
+    </section>
+
+    <!-- ═══ HISTORIQUE ═══ -->
+    <section class="tp-page" id="tpHistoriquePage">
+      <div class="tp-page-header">
+        <div><h2><i class="fa-solid fa-clock-rotate-left"></i> Historique</h2><p>Toutes vos livraisons passées</p></div>
+        <div class="tp-header-actions">
+          <div class="tp-search-wrap sm"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="tpHistSearch" placeholder="Rechercher..." /></div>
+          <select class="tp-select" id="tpHistFilter"><option value="all">Tous</option><option value="livree">Livrées</option><option value="annulee">Annulées</option></select>
+        </div>
+      </div>
+      <div class="tp-hist-stats" id="tpHistStats">
+        <div class="tp-hist-stat"><strong id="histTotal">0</strong><span>Total</span></div>
+        <div class="tp-hist-stat tp-hist-green"><strong id="histLivrees">0</strong><span>Livrées</span></div>
+        <div class="tp-hist-stat tp-hist-red"><strong id="histAnnulees">0</strong><span>Annulées</span></div>
+        <div class="tp-hist-stat tp-hist-blue"><strong id="histRevenu">0 DA</strong><span>Revenu estimé</span></div>
+      </div>
+      <div id="tpHistoriqueGrid" class="tp-cards-grid"><div class="tp-loading-state"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div></div>
+    </section>
+
+    <!-- ═══ PROFIL ═══ -->
+    <section class="tp-page" id="tpProfilPage">
+      <div class="tp-page-header"><div><h2><i class="fa-solid fa-user-gear"></i> Mon profil</h2><p>Informations personnelles et véhicule</p></div></div>
+      <div class="tp-profil-layout">
+
+        <div class="tp-panel tp-profil-avatar-card">
+          <div class="tp-avatar-wrap" style="position:relative;display:inline-block">
+            <img id="tpProfilAvatar" src="{% if request.user.profile.profile_photo %}{{ request.user.profile.profile_photo.url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100%25' height='100%25' fill='%231f6f43'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='42' fill='%23fff'>{{ request.user.first_name|default:request.user.username|first|upper }}</text></svg>{% endif %}" alt="avatar" />
+            <button type="button" onclick="document.getElementById('tpPhotoFileInput').click()" title="Changer la photo" style="position:absolute;bottom:4px;right:4px;background:#1f6f43;color:#fff;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.25)">📷</button>
+            <input type="file" id="tpPhotoFileInput" accept="image/*" style="display:none">
+          </div>
+          <h3 id="tpProfilName">{{ request.user.get_full_name|default:request.user.username }}</h3>
+          <span class="tp-role-badge"><i class="fa-solid fa-truck"></i> Transporteur vérifié</span>
+          <div class="tp-completion-big">
+            <div class="tp-completion-label"><span>Complétion du profil</span><strong id="tpProfilCompletion">0%</strong></div>
+            <div class="tp-progress-bar-big"><div class="tp-progress-fill-big" id="tpProfilProgressFill" style="width:0%"></div></div>
+          </div>
+          <div class="tp-profil-stats">
+            <div><strong id="profStatMissions">—</strong><span>Missions</span></div>
+            <div><strong id="profStatLivrees">—</strong><span>Livrées</span></div>
+            <div><strong id="profStatEncours">—</strong><span>En cours</span></div>
+          </div>
+        </div>
+
+        <div class="tp-profil-forms">
+          <div class="tp-panel">
+            <div class="tp-panel-head"><h3><i class="fa-solid fa-user"></i> Informations personnelles</h3></div>
+            <div class="tp-form-grid">
+              <div class="tp-form-group"><label>Nom complet</label><input type="text" id="transportFullName" value="{{ request.user.get_full_name|default:request.user.username }}" placeholder="Votre nom complet" /></div>
+              <div class="tp-form-group"><label>Email</label><input type="email" id="transportEmail" value="{{ request.user.email }}" placeholder="votre@email.com" /></div>
+              <div class="tp-form-group"><label>Téléphone</label><input type="tel" id="transportPhone" value="{{ request.user.profile.phone|default:'' }}" placeholder="+213 6XX XXX XXX" /></div>
+              <div class="tp-form-group"><label>Wilaya</label><input type="text" id="transportWilaya" value="{{ request.user.profile.birth_city|default:'' }}" placeholder="Ex : Constantine" /></div>
+            </div>
+            <button class="tp-btn tp-btn-primary" id="transportSaveProfileBtn" type="button"><i class="fa-solid fa-floppy-disk"></i> Enregistrer le profil</button>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-head"><h3><i class="fa-solid fa-truck-front"></i> Informations véhicule</h3></div>
+            <div class="tp-form-grid">
+              <div class="tp-form-group"><label>Type de véhicule</label><input type="text" id="transportVehicleType" value="{{ initial_profile.vehicle_name|default:'' }}" placeholder="Ex : Camionnette" /></div>
+              <div class="tp-form-group"><label>Immatriculation</label><input type="text" id="transportPlate" value="{{ initial_profile.plate|default:'' }}" placeholder="Ex : 12345-267-16" /></div>
+              <div class="tp-form-group"><label>Capacité (tonnes)</label><input type="text" id="transportCapacity" value="{{ initial_profile.capacity|default:'' }}" placeholder="Ex : 3.5" /></div>
+              <div class="tp-form-group"><label>État du véhicule</label>
+                <select id="transportCondition">
+                  <option value="">Sélectionner...</option>
+                  <option value="Excellent" {% if initial_profile.condition == 'Excellent' %}selected{% endif %}>Excellent</option>
+                  <option value="Bon" {% if initial_profile.condition == 'Bon' %}selected{% endif %}>Bon</option>
+                  <option value="Moyen" {% if initial_profile.condition == 'Moyen' %}selected{% endif %}>Moyen</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="tp-panel">
+            <div class="tp-panel-head"><h3><i class="fa-solid fa-shield-halved"></i> Sécurité du compte</h3></div>
+            <div class="tp-form-grid">
+              <div class="tp-form-group full">
+                <label>Mot de passe actuel</label>
+                <div class="tp-input-eye">
+                  <input type="password" id="transportPasswordCurrent" placeholder="••••••••" />
+                  <button type="button" class="tp-eye-btn" data-target="transportPasswordCurrent"><i class="fa-regular fa-eye"></i></button>
+                </div>
+              </div>
+              <div class="tp-form-group">
+                <label>Nouveau mot de passe</label>
+                <div class="tp-input-eye">
+                  <input type="password" id="transportPasswordNew" placeholder="Minimum 8 caractères" />
+                  <button type="button" class="tp-eye-btn" data-target="transportPasswordNew"><i class="fa-regular fa-eye"></i></button>
+                </div>
+              </div>
+              <div class="tp-form-group">
+                <label>Confirmer</label>
+                <div class="tp-input-eye">
+                  <input type="password" id="transportPasswordConfirm" placeholder="Répétez" />
+                  <button type="button" class="tp-eye-btn" data-target="transportPasswordConfirm"><i class="fa-regular fa-eye"></i></button>
+                </div>
+              </div>
+            </div>
+            <div class="tp-pwd-strength" id="tpPasswordStrength" style="display:none">
+              <div class="tp-pwd-bar"><div id="tpPwdFill"></div></div>
+              <small id="tpPwdLabel">Force du mot de passe</small>
+            </div>
+            <button class="tp-btn tp-btn-danger" id="transportChangePasswordBtn" type="button"><i class="fa-solid fa-lock"></i> Changer le mot de passe</button>
+          </div>
+        </div>
+      </div>
+        <!-- Mobile: bouton déconnexion dans Profil uniquement -->
+        <a href="{% url 'logout' %}" class="m-logout-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Se déconnecter
+        </a>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL DÉTAIL COMMANDE -->
+<div class="tp-modal-overlay" id="tpOrderModal" style="display:none">
+  <div class="tp-modal">
+    <div class="tp-modal-head">
+      <div><span class="tp-modal-eyebrow">Détail</span><h3 id="tpModalTitle">Commande #—</h3></div>
+      <button class="tp-modal-close" id="tpModalClose">✕</button>
+    </div>
+    <div class="tp-modal-body" id="tpModalBody"></div>
+    <div class="tp-modal-foot" id="tpModalFoot"></div>
+  </div>
+</div>
+
+<div id="tpToastWrap" style="position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="{% static 'js/profile-common.js' %}"></script>
+<script src="{% static 'js/transpo-advanced.js' %}"></script>
+<script src="{% static 'js/agrigov-chatbot.js' %}"></script>
+<script>
+// ══ REAL-TIME GPS TRACKING ══════════════════════════════════════
+let _tpWatchId = null;
+let _tpMyMarker = null;
+let _tpMyCircle = null;
+let _tpTracking = false;
+
+function toggleRealTracking() {
+  if (_tpTracking) {
+    stopTracking();
+  } else {
+    startTracking();
+  }
+}
+
+function startTracking() {
+  if (!navigator.geolocation) {
+    alert('La géolocalisation n\'est pas supportée par votre navigateur.');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      _tpTracking = true;
+      updateTrackBtn(true);
+      updateMyPosition(pos);
+      _tpWatchId = navigator.geolocation.watchPosition(updateMyPosition, onGeoError, {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 10000
+      });
+    },
+    onGeoError,
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+function stopTracking() {
+  if (_tpWatchId !== null) {
+    navigator.geolocation.clearWatch(_tpWatchId);
+    _tpWatchId = null;
+  }
+  _tpTracking = false;
+  updateTrackBtn(false);
+  if (_tpMyMarker) { _tpMyMarker.remove(); _tpMyMarker = null; }
+  if (_tpMyCircle) { _tpMyCircle.remove(); _tpMyCircle = null; }
+}
+
+function updateTrackBtn(active) {
+  const btn = document.getElementById('tpTrackBtn');
+  const badge = document.getElementById('tpLocateBadge');
+  if (!btn) return;
+  if (active) {
+    btn.innerHTML = '<i class="fa-solid fa-circle-stop"></i> Arrêter GPS';
+    btn.classList.add('tracking');
+    if (badge) badge.classList.add('visible');
+  } else {
+    btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Me localiser';
+    btn.classList.remove('tracking');
+    if (badge) badge.classList.remove('visible');
+  }
+}
+
+function updateMyPosition(pos) {
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
+  const acc = pos.coords.accuracy;
+
+  // Ensure map exists — navigate to carte page if needed
+  ensureMap();
+  const map = getMap();
+  if (!map) return;
+
+  const myIcon = window.L.divIcon({
+    className: '',
+    html: '<div style="background:#2563eb;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 10px rgba(37,99,235,.5);border:3px solid #fff;">🚚</div>',
+    iconSize: [32, 32], iconAnchor: [16, 16]
+  });
+
+  if (_tpMyMarker) {
+    _tpMyMarker.setLatLng([lat, lng]);
+    _tpMyCircle.setLatLng([lat, lng]).setRadius(acc);
+  } else {
+    _tpMyMarker = window.L.marker([lat, lng], { icon: myIcon })
+      .bindPopup('<strong>📍 Votre position</strong><br>Précision : ' + Math.round(acc) + ' m')
+      .addTo(map);
+    _tpMyCircle = window.L.circle([lat, lng], {
+      radius: acc, color: '#2563eb', fillColor: '#2563eb',
+      fillOpacity: 0.08, weight: 1.5
+    }).addTo(map);
+  }
+  map.setView([lat, lng], 13);
+  document.getElementById('tpLocateBadge').textContent = '📍 GPS actif — précision ' + Math.round(acc) + ' m';
+}
+
+function onGeoError(err) {
+  console.warn('GPS error:', err.message);
+  stopTracking();
+  alert('Impossible d\'obtenir votre position : ' + err.message);
+}
+
+function ensureMap() {
+  // Activate carte page silently so leaflet map is visible when initialized
+  const cartePage = document.getElementById('tpCartePage');
+  if (cartePage && !cartePage.classList.contains('active')) {
+    // Navigate to carte tab
+    document.querySelectorAll('.tp-nav-link').forEach(function(l) { l.classList.remove('active'); });
+    document.querySelectorAll('.tp-page').forEach(function(p) { p.classList.remove('active'); });
+    cartePage.classList.add('active');
+    const link = document.querySelector('[data-page="tpCartePage"]');
+    if (link) link.classList.add('active');
+    // Update page title
+    const titleEl = document.getElementById('tpPageTitle');
+    if (titleEl) titleEl.textContent = 'Carte en temps réel';
+  }
+}
+
+function getMap() {
+  // Access transpo-advanced state
+  if (window._tpState && window._tpState.mapInstance) return window._tpState.mapInstance;
+  // Fallback: try to find the leaflet map instance via the DOM element
+  const mapEl = document.getElementById('tpLeafletMap');
+  if (mapEl && mapEl._leaflet_id) {
+    return window.L.map._instances ? window.L.map._instances[mapEl._leaflet_id] : null;
+  }
+  return null;
+}
+// ════════════════════════════════════════════════════════════════
+</script>
+<script src="{% static 'js/pwa-register.js' %}"></script>
+
+<!-- ═══ MOBILE BOTTOM NAV — TRANSPORTEUR ═══ -->
+<nav class="m-bottom-nav m-bottom-nav-scroll" id="mBottomNav">
+  <button class="m-nav-tab active" id="mTab-tpDashboardPage" onclick="mTpTo('tpDashboardPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Accueil</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-tpMissionsPage" onclick="mTpTo('tpMissionsPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    <span>Missions</span>
+    <span class="m-nav-badge" id="mBadge-tpMissionsPage" style="display:none">0</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-tpLivraisonsPage" onclick="mTpTo('tpLivraisonsPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+    <span>Livraisons</span>
+    <span class="m-nav-badge" id="mBadge-tpLivraisonsPage" style="display:none">0</span>
+  </button>
+  <div class="m-nav-fab-wrap" onclick="mTpTo('tpCartePage')">
+    <button class="m-nav-fab"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" width="26" height="26"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 00-8 8c0 5.25 8 14 8 14s8-8.75 8-14a8 8 0 00-8-8z"/></svg></button>
+    <span class="m-nav-fab-label">Carte</span>
+  </div>
+  <button class="m-nav-tab" id="mTab-tpPlanningPage" onclick="mTpTo('tpPlanningPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Planning</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-tpNotificationsPage" onclick="mTpTo('tpNotificationsPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    <span>Notifs</span>
+    <span class="m-nav-badge" id="mBadge-tpNotifPage" style="display:none">0</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-tpHistoriquePage" onclick="mTpTo('tpHistoriquePage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <span>Historique</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-tpProfilPage" onclick="mTpTo('tpProfilPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Profil</span>
+  </button>
+</nav>
+<script>
+function mTpTo(pageId) {
+  document.querySelectorAll('.tp-page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById(pageId);
+  if(page) { page.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+  document.querySelectorAll('.m-nav-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('mTab-' + pageId);
+  if(tab) { tab.classList.add('active'); tab.scrollIntoView({inline:'center',behavior:'smooth'}); }
+}
+document.querySelectorAll('.tp-nav-link').forEach(function(link){
+  link.addEventListener('click', function(){
+    const pid = this.getAttribute('data-page');
+    if(pid) { document.querySelectorAll('.m-nav-tab').forEach(t=>t.classList.remove('active'));
+      const t=document.getElementById('mTab-'+pid); if(t){t.classList.add('active');t.scrollIntoView({inline:'center',behavior:'smooth'});} }
+  });
+});
+</script>
+</body>
+</html>

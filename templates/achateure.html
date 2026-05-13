@@ -1,0 +1,663 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+   <link rel="stylesheet" href="{% static 'css/achateur.css' %}">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+<!-- PWA Mobile -->
+<meta name="theme-color" content="#2d7a2d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AgriGov">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
+<link rel="stylesheet" href="{% static 'css/pwa-mobile.css' %}">
+</head>
+<body class="acheteur-body" id="achDashboardPage">
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-wrap" onclick="location.href='{% url 'home' %}'">
+        <div class="logo-icon">🛒</div>
+        <div>
+          <div class="logo-text">Agri<span>Gov</span></div>
+          <div class="logo-sub">Espace Acheteur</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar" id="buyerSidebarAvatar">{{ request.user.first_name|default:request.user.username|first|upper }}</div>
+      <div class="user-info">
+        <div class="user-name" id="buyerSidebarName">{{ request.user.get_full_name|default:request.user.username }}</div>
+        <div class="user-role">Acheteur Pro</div>
+      </div>
+      <div class="user-status"></div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <div class="nav-item active" onclick="navigate('dashboard')">
+        <span class="nav-icon">🏠</span> Tableau de bord
+      </div>
+      <div class="nav-item" onclick="navigate('commandes')">
+        <span class="nav-icon">📋</span> Mes Commandes
+        <span class="nav-badge">4</span>
+      </div>
+      <div class="nav-item" onclick="navigate('produits')">
+        <span class="nav-icon">🌾</span> Catalogue Produits
+      </div>
+      <div class="nav-item" onclick="navigate('livraison')">
+        <span class="nav-icon">🚛</span> Suivi Livraison
+        <span class="nav-badge gold">1</span>
+      </div>
+      <div class="nav-section-label">Gestion</div>
+      <div class="nav-item" onclick="navigate('notifications')">
+        <span class="nav-icon">🔔</span> Notifications
+        <span class="nav-badge">3</span>
+      </div>
+      <div class="nav-section-label">Compte</div>
+      <div class="nav-item" onclick="navigate('profil')">
+        <span class="nav-icon">👤</span> Mon Profil
+      </div>
+      <div class="nav-item" onclick="navigate('parametres')">
+        <span class="nav-icon">⚙️</span> Paramètres
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="dark-toggle" onclick="toggleDark()">
+        <div class="dark-toggle-label">
+          <span id="dark-icon-sidebar">🌙</span>
+          <span id="dark-label-sidebar">Mode sombre</span>
+        </div>
+        <div class="toggle-switch" id="toggle-sw"><div class="toggle-thumb"></div></div>
+      </div>
+      <div class="logout-btn m-desktop-only" onclick="location.href='{% url 'logout' %}'">
+        <span>↩</span> Déconnexion
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+    <header class="topbar">
+      <div class="hamburger" id="hamburger" onclick="toggleSidebar()">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="topbar-title" id="topbar-title">Tableau de bord</div>
+      <div class="topbar-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Rechercher produits, commandes..." id="search-input">
+      </div>
+      <div class="topbar-actions">
+        <div class="topbar-btn" onclick="toggleDark()" title="Mode sombre"><span id="dark-icon-top">🌙</span></div>
+        <div class="topbar-btn" onclick="navigate('notifications')">🔔<div class="notif-dot"></div></div>
+        <div class="topbar-btn" onclick="navigate('profil')">👤</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ═══ TABLEAU DE BORD ═══ -->
+      <div class="section active" id="sec-dashboard">
+
+        <div class="welcome-banner">
+          <div class="welcome-grid"></div>
+          <div class="welcome-text">
+            <div class="welcome-greeting">Bonjour, Acheteur Pro · AgriGov Market</div>
+            <div class="welcome-name">Bienvenue, <em id="buyerWelcomeName">{{ request.user.get_full_name|default:request.user.username }}</em> 👋</div>
+            <div class="welcome-desc">Retrouvez vos commandes, consultez les dernières offres agricoles et suivez vos livraisons en toute simplicité.</div>
+          </div>
+          <div class="welcome-actions">
+            <button class="btn-glass" onclick="navigate('produits')">📦 Nouvelle commande</button>
+            <button class="btn-gold" onclick="navigate('commandes')">📋 Mes commandes</button>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-accent"></div>
+            <div class="stat-label">Total Commandes</div>
+            <div class="stat-value">4</div>
+            <div class="stat-change">↑ +2 ce mois</div>
+            <div class="stat-icon">📋</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-accent"></div>
+            <div class="stat-label">Commandes livrées</div>
+            <div class="stat-value">1</div>
+            <div class="stat-change">100% à temps</div>
+            <div class="stat-icon">✅</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-accent"></div>
+            <div class="stat-label">En livraison</div>
+            <div class="stat-value">1</div>
+            <div class="stat-change">↻ En cours</div>
+            <div class="stat-icon">🚛</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-accent"></div>
+            <div class="stat-label">Total dépensé</div>
+            <div class="stat-value">184<span>k DA</span></div>
+            <div class="stat-change">↑ Ce mois</div>
+            <div class="stat-icon">💰</div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <div class="quick-action-btn" onclick="navigate('produits')">
+            <div class="quick-action-icon">🛒</div>
+            <div class="quick-action-label">Passer une commande</div>
+            <div class="quick-action-sub">Catalogue disponible</div>
+          </div>
+          <div class="quick-action-btn" onclick="navigate('livraison')">
+            <div class="quick-action-icon">📍</div>
+            <div class="quick-action-label">Suivre ma livraison</div>
+            <div class="quick-action-sub">1 en transit</div>
+          </div>
+          <div class="quick-action-btn" onclick="navigate('notifications')">
+            <div class="quick-action-icon">🔔</div>
+            <div class="quick-action-label">Notifications</div>
+            <div class="quick-action-sub">3 non lues</div>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Dépenses mensuelles</div>
+                <div class="card-subtitle">6 derniers mois · en milliers DA</div>
+              </div>
+              <div class="card-action">Détails →</div>
+            </div>
+            <div class="chart-bars" id="chart"></div>
+            <div style="display:flex;justify-content:space-between;margin-top:8px;">
+              <span style="font-size:11px;color:var(--text-muted)">Oct</span>
+              <span style="font-size:11px;color:var(--text-muted)">Nov</span>
+              <span style="font-size:11px;color:var(--text-muted)">Déc</span>
+              <span style="font-size:11px;color:var(--text-muted)">Jan</span>
+              <span style="font-size:11px;color:var(--text-muted)">Fév</span>
+              <span style="font-size:11px;color:var(--text-muted)">Mar</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Activité récente</div>
+                <div class="card-subtitle">Dernières actions</div>
+              </div>
+            </div>
+            <div class="activity-list">
+              <div class="activity-item">
+                <div class="activity-dot order">📋</div>
+                <div class="activity-info"><div class="activity-title">Commande C-2024-108</div><div class="activity-time">Il y a 2h · Supermarché El Khir</div></div>
+                <div class="activity-amount">36 k DA</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot delivery">🚛</div>
+                <div class="activity-info"><div class="activity-title">Livraison confirmée</div><div class="activity-time">Hier · Ferme El Kheir</div></div>
+                <div class="activity-amount">60 kg</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot payment">💰</div>
+                <div class="activity-info"><div class="activity-title">Paiement effectué</div><div class="activity-time">Il y a 3j · C-2024-105</div></div>
+                <div class="activity-amount">28 k DA</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot order">📋</div>
+                <div class="activity-info"><div class="activity-title">Nouvelle commande créée</div><div class="activity-time">Il y a 5j · Pommes de terre</div></div>
+                <div class="activity-amount">150 kg</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Commandes récentes</div><div class="card-subtitle">Vos 3 dernières commandes</div></div>
+              <div class="card-action" onclick="navigate('commandes')">Voir tout →</div>
+            </div>
+            <div class="order-card" onclick="navigate('commandes')">
+              <div class="order-card-top">
+                <div><div class="order-id">C-2024-108</div><div class="order-farm">Ferme El Kheir · Tomates</div></div>
+                <div><span class="badge badge-new">Nouvelle</span><div class="order-date" style="margin-top:4px">30 Mars 2026</div></div>
+              </div>
+              <div style="display:flex;gap:20px;font-size:13px;color:var(--text-muted)"><span>📦 600 kg</span><span>💰 36 000 DA</span></div>
+            </div>
+            <div class="order-card" onclick="navigate('commandes')">
+              <div class="order-card-top">
+                <div><div class="order-id">C-2024-107</div><div class="order-farm">Ferme Boualem · Oignons</div></div>
+                <div><span class="badge badge-progress">En livraison</span><div class="order-date" style="margin-top:4px">27 Mars 2026</div></div>
+              </div>
+              <div style="display:flex;gap:20px;font-size:13px;color:var(--text-muted)"><span>📦 300 kg</span><span>💰 18 000 DA</span></div>
+            </div>
+            <div class="order-card" onclick="navigate('commandes')">
+              <div class="order-card-top">
+                <div><div class="order-id">C-2024-106</div><div class="order-farm">Ferme Ighil · Pommes de terre</div></div>
+                <div><span class="badge badge-done">Livrée</span><div class="order-date" style="margin-top:4px">22 Mars 2026</div></div>
+              </div>
+              <div style="display:flex;gap:20px;font-size:13px;color:var(--text-muted)"><span>📦 500 kg</span><span>💰 30 000 DA</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ═══ COMMANDES ═══ -->
+      <div class="section" id="sec-commandes">
+        <div class="page-header">
+          <div class="page-title">Mes Commandes</div>
+          <div class="page-desc">Gérez vos commandes en cours, consultez l'historique et suivez les livraisons.</div>
+        </div>
+        <div class="stats-grid" style="margin-bottom:24px">
+          <div class="stat-card"><div class="stat-card-accent"></div><div class="stat-label">Total</div><div class="stat-value">4</div><div class="stat-icon">📋</div></div>
+          <div class="stat-card"><div class="stat-card-accent"></div><div class="stat-label">Nouvelles</div><div class="stat-value">2</div><div class="stat-icon">🆕</div></div>
+          <div class="stat-card"><div class="stat-card-accent"></div><div class="stat-label">En livraison</div><div class="stat-value">1</div><div class="stat-icon">🚛</div></div>
+          <div class="stat-card"><div class="stat-card-accent"></div><div class="stat-label">Livrées</div><div class="stat-value">1</div><div class="stat-icon">✅</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Liste des Commandes</div>
+            <button onclick="navigate('produits')" style="padding:10px 20px;background:var(--green-deep);color:white;border:none;border-radius:11px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;font-size:13px;transition:all 0.2s">+ Nouvelle commande</button>
+          </div>
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterOrders(this,'all')">Tous</button>
+            <button class="filter-tab" onclick="filterOrders(this,'new')">Nouvelles</button>
+            <button class="filter-tab" onclick="filterOrders(this,'progress')">En livraison</button>
+            <button class="filter-tab" onclick="filterOrders(this,'done')">Livrées</button>
+            <button class="filter-tab" onclick="filterOrders(this,'refused')">Refusées</button>
+          </div>
+          <div id="orders-list">
+            <div class="order-card" data-status="new">
+              <div class="order-card-top">
+                <div><div class="order-id">C-2024-108</div><div class="order-farm">Ferme El Kheir · Sétif</div></div>
+                <div style="text-align:right"><span class="badge badge-new">Nouvelle</span><div class="order-date">30 Mars 2026 · 09:15</div></div>
+              </div>
+              <div class="order-card-body">
+                <div><div class="order-field-label">Produit</div><div class="order-field-val">🍅 Tomates</div></div>
+                <div><div class="order-field-label">Quantité</div><div class="order-field-val">600 kg</div></div>
+                <div><div class="order-field-label">Montant</div><div class="order-field-val">36 000 DA</div></div>
+              </div>
+              <div class="order-card-footer">
+                <span style="font-size:13px;color:var(--text-muted)">🏡 Ferme El Kheir · Sétif</span>
+                <div style="display:flex;gap:9px">
+                  <button class="btn-outline-green">Voir détails</button>
+                  <button class="btn-filled-green">Payer maintenant</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="order-card" data-status="new">
+              <div class="order-card-top">
+                <div><div class="order-id">C-2024-109</div><div class="order-farm">Ferme Boualem · Batna</div></div>
+                <div style="text-align:right"><span class="badge badge-new">Nouvelle</span><div class="order-date">29 Mars 2026 · 14:30</div></div>
+              </div>
+              <div class="order-card-body">
+                <div><div class="order-field-label">Produit</div><div class="order-field-val">🧅 Oignons</div></div>
+                <div><div class="order-field-label">Quantité</div><div class="order-field-val">200 kg</div></div>
+                <div><div class="order-field-label">Montant</div><div class="order-field-val">12 000 DA</div></div>
+              </div>
+              <div class="order-card-footer">
+                <span style="font-size:13px;color:var(--text-muted)">🏡 Ferme Boualem · Batna</span>
+                <div style="display:flex;gap:9px">
+                  <button class="btn-outline-green">Voir détails</button>
+                  <button class="btn-filled-green">Payer maintenant</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="order-card" data-status="progress">
+              <div class="order-card-top">
+                <div><div class="order-id">C-2024-107</div><div class="order-farm">Ferme Ighil · Béjaïa</div></div>
+                <div style="text-align:right"><span class="badge badge-progress">En livraison</span><div class="order-date">27 Mars 2026 · 11:00</div></div>
+              </div>
+              <div class="order-card-body">
+                <div><div class="order-field-label">Produit</div><div class="order-field-val">🥔 Pommes de terre</div></div>
+                <div><div class="order-field-label">Quantité</div><div class="order-field-val">300 kg</div></div>
+                <div><div class="order-field-label">Montant</div><div class="order-field-val">18 000 DA</div></div>
+              </div>
+              <div class="order-card-footer">
+                <span style="font-size:13px;color:var(--text-muted)">🚛 Transporteur : Rabah Saidani</span>
+                <button onclick="navigate('livraison')" class="btn-outline-gold">Suivre sur carte</button>
+              </div>
+            </div>
+
+            <div class="order-card" data-status="done">
+              <div class="order-card-top">
+                <div><div class="order-id">C-2024-106</div><div class="order-farm">Ferme El Kheir · Sétif</div></div>
+                <div style="text-align:right"><span class="badge badge-done">Livrée</span><div class="order-date">22 Mars 2026</div></div>
+              </div>
+              <div class="order-card-body">
+                <div><div class="order-field-label">Produit</div><div class="order-field-val">🍅 Tomates</div></div>
+                <div><div class="order-field-label">Quantité</div><div class="order-field-val">500 kg</div></div>
+                <div><div class="order-field-label">Montant</div><div class="order-field-val">30 000 DA</div></div>
+              </div>
+              <div class="order-card-footer">
+                <span style="font-size:13px;color:var(--green-accent)">✅ Livraison confirmée le 22 Mars</span>
+                <button class="btn-outline-green">Renouveler</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CATALOGUE ═══ -->
+      <div class="section" id="sec-produits">
+        <div class="page-header">
+          <div class="page-title">Catalogue Produits</div>
+          <div class="page-desc">Parcourez les produits disponibles et passez vos commandes directement auprès des agriculteurs certifiés.</div>
+        </div>
+        <div class="card" style="margin-bottom:24px">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+            <input type="text" placeholder="🔍 Rechercher un produit..." style="flex:1;min-width:180px;padding:11px 16px;background:var(--input-bg);border:1.5px solid var(--border-strong);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-primary);outline:none;">
+            <select style="padding:11px 16px;background:var(--input-bg);border:1.5px solid var(--border-strong);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-primary);outline:none;cursor:pointer;">
+              <option>Toutes les wilayas</option><option>Adrar</option><option>Chlef</option><option>Laghouat</option><option>Oum El Bouaghi</option><option>Batna</option><option>Béjaïa</option><option>Biskra</option><option>Béchar</option><option>Blida</option><option>Bouira</option><option>Tamanrasset</option><option>Tébessa</option><option>Tlemcen</option><option>Tiaret</option><option>Tizi Ouzou</option><option>Alger</option><option>Djelfa</option><option>Jijel</option><option>Sétif</option><option>Saïda</option><option>Skikda</option><option>Sidi Bel Abbès</option><option>Annaba</option><option>Guelma</option><option>Constantine</option><option>Médéa</option><option>Mostaganem</option><option>M’Sila</option><option>Mascara</option><option>Ouargla</option><option>Oran</option><option>El Bayadh</option><option>Illizi</option><option>Bordj Bou Arréridj</option><option>Boumerdès</option><option>El Tarf</option><option>Tindouf</option><option>Tissemsilt</option><option>El Oued</option><option>Khenchela</option><option>Souk Ahras</option><option>Tipaza</option><option>Mila</option><option>Aïn Defla</option><option>Naâma</option><option>Aïn Témouchent</option><option>Ghardaïa</option><option>Relizane</option><option>Timimoun</option><option>Bordj Badji Mokhtar</option><option>Ouled Djellal</option><option>Béni Abbès</option><option>In Salah</option><option>In Guezzam</option><option>Touggourt</option><option>Djanet</option><option>El M’Ghair</option><option>El Meniaa</option>
+            </select>
+            <select style="padding:11px 16px;background:var(--input-bg);border:1.5px solid var(--border-strong);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-primary);outline:none;cursor:pointer;">
+              <option>Tous les produits</option><option>Légumes</option><option>Fruits</option><option>Céréales</option><option>Légumineuses</option>
+            </select>
+          </div>
+        </div>
+ <div class="products-grid">
+    <div class="product-card">
+            <div class="product-img" style="background:linear-gradient(135deg,#8B0000,#c0392b)">🍅<div class="product-badge-cert">BIO</div></div>
+            <div class="product-info">
+              <div class="product-name">Tomates fraîches</div>
+              <div class="product-farm">🏡 Ferme El Kheir · Sétif</div>
+              <div class="product-price-row"><div class="product-price">60<span> DA/kg</span></div><button class="btn-add" onclick="alert('Produit ajouté à la commande !')">+</button></div>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-img" style="background:linear-gradient(135deg,#5a3e00,#a06010)">🥔</div>
+            <div class="product-info">
+              <div class="product-name">Pommes de terre</div>
+              <div class="product-farm">🏡 Ferme Ighil · Béjaïa</div>
+              <div class="product-price-row"><div class="product-price">45<span> DA/kg</span></div><button class="btn-add" onclick="alert('Produit ajouté à la commande !')">+</button></div>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-img" style="background:linear-gradient(135deg,#5a4a00,#b08020)">🧅<div class="product-badge-cert">CERT</div></div>
+            <div class="product-info">
+              <div class="product-name">Oignons</div>
+              <div class="product-farm">🏡 Ferme Boualem · Batna</div>
+              <div class="product-price-row"><div class="product-price">55<span> DA/kg</span></div><button class="btn-add" onclick="alert('Produit ajouté à la commande !')">+</button></div>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-img" style="background:linear-gradient(135deg,#1a4a00,#3a8020)">🥬</div>
+            <div class="product-info">
+              <div class="product-name">Salade verte</div>
+              <div class="product-farm">🏡 Ferme Rezgui · Tizi-Ouzou</div>
+              <div class="product-price-row"><div class="product-price">40<span> DA/kg</span></div><button class="btn-add" onclick="alert('Produit ajouté à la commande !')">+</button></div>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-img" style="background:linear-gradient(135deg,#2a0050,#600090)">🍆<div class="product-badge-cert">BIO</div></div>
+            <div class="product-info">
+              <div class="product-name">Aubergines</div>
+              <div class="product-farm">🏡 Ferme Hamida · Constantine</div>
+              <div class="product-price-row"><div class="product-price">70<span> DA/kg</span></div><button class="btn-add" onclick="alert('Produit ajouté à la commande !')">+</button></div>
+            </div>
+          </div>
+          <div class="product-card">
+            <div class="product-img" style="background:linear-gradient(135deg,#004a40,#009080)">🥒</div>
+            <div class="product-info">
+              <div class="product-name">Concombres</div>
+              <div class="product-farm">🏡 Ferme Larbi · Jijel</div>
+              <div class="product-price-row"><div class="product-price">50<span> DA/kg</span></div><button class="btn-add" onclick="alert('Produit ajouté à la commande !')">+</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ LIVRAISON ═══ -->
+      <div class="section" id="sec-livraison">
+        <!-- Contenu chargé dynamiquement par renderBuyerLogisticsSection() -->
+      </div>
+
+      <!-- ═══ NOTIFICATIONS ═══ -->
+      <div class="section" id="sec-notifications">
+        <div class="page-header">
+          <div class="page-title">Notifications</div>
+          <div class="page-desc">Restez informé sur l'état de vos commandes, paiements et livraisons.</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Toutes les notifications</div>
+            <span style="font-size:13px;color:var(--text-muted);cursor:pointer">Tout marquer comme lu</span>
+          </div>
+          <div class="notif-item unread">
+            <div class="notif-icon order">📦</div>
+            <div><div class="notif-title">Commande C-2024-108 acceptée</div><div class="notif-desc">La ferme El Kheir a accepté votre commande de 600 kg de tomates. Procédez au paiement pour confirmer.</div></div>
+            <div class="notif-time">Il y a 1h</div>
+            <div class="unread-dot"></div>
+          </div>
+          <div class="notif-item unread">
+            <div class="notif-icon farm">🚛</div>
+            <div><div class="notif-title">Livraison en route</div><div class="notif-desc">Votre commande C-2024-107 est en cours de livraison. ETA : 31 Mars à 17h00.</div></div>
+            <div class="notif-time">Il y a 3h</div>
+            <div class="unread-dot"></div>
+          </div>
+          <div class="notif-item unread">
+            <div class="notif-icon alert">💰</div>
+            <div><div class="notif-title">Rappel de paiement</div><div class="notif-desc">La commande C-2024-109 attend votre confirmation de paiement avant traitement.</div></div>
+            <div class="notif-time">Il y a 5h</div>
+            <div class="unread-dot"></div>
+          </div>
+          <div class="notif-item">
+            <div class="notif-icon farm">🌾</div>
+            <div><div class="notif-title">Nouveau produit disponible</div><div class="notif-desc">La ferme Tafna vient de publier des agrumes biologiques à 80 DA/kg.</div></div>
+            <div class="notif-time">Hier</div>
+          </div>
+          <div class="notif-item">
+            <div class="notif-icon order">✅</div>
+            <div><div class="notif-title">Livraison confirmée</div><div class="notif-desc">Votre commande C-2024-106 a bien été livrée et réceptionnée avec succès.</div></div>
+            <div class="notif-time">22 Mars</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PROFIL ═══ -->
+      <div class="section" id="sec-profil">
+        <div class="page-header">
+          <div class="page-title">Mon Profil</div>
+          <div class="page-desc">Gérez vos informations personnelles et les paramètres de votre compte.</div>
+        </div>
+        <div style="margin-bottom:24px">
+          <div class="profile-banner"></div>
+          <div class="profile-card-body">
+            <div class="profile-avatar-wrap"><div class="profile-avatar" id="buyerProfileAvatar">B</div></div>
+            <div class="profile-name" id="buyerProfileNameDisplay">{{ request.user.get_full_name|default:request.user.username }}</div>
+            <div class="profile-role">🛒 Acheteur</div>
+            <div class="form-row-2">
+              <div class="form-group"><label>Nom</label><input type="text" id="buyerLastName" value="{{ request.user.last_name|default:'' }}"></div>
+              <div class="form-group"><label>Prénom</label><input type="text" id="buyerFirstName" value="{{ request.user.first_name|default:'' }}"></div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group"><label>Email</label><input type="email" id="buyerEmail" value="{{ request.user.email|default:request.user.username }}"></div>
+              <div class="form-group"><label>Téléphone</label><input type="tel" id="buyerPhone" value="{{ request.user.profile.phone|default:'' }}"></div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group"><label>Lieu de travail</label>
+                <select id="buyerWorkplace"><option value="Supermarché" {% if initial_profile.workplace == 'Supermarché' %}selected{% endif %}>Supermarché</option><option value="Boucherie" {% if initial_profile.workplace == 'Boucherie' %}selected{% endif %}>Boucherie</option><option value="Restaurant" {% if initial_profile.workplace == 'Restaurant' %}selected{% endif %}>Restaurant</option><option value="Hôtel" {% if initial_profile.workplace == 'Hôtel' %}selected{% endif %}>Hôtel</option></select>
+              </div>
+              <div class="form-group"><label>Nom de l'établissement</label><input type="text" id="buyerEstablishment" value="{{ initial_profile.establishment_name|default:'' }}"></div>
+            </div>
+            <div class="form-group" style="margin-bottom:20px"><label>Ville / Wilaya</label><input type="text" id="buyerCity" value="{{ request.user.profile.birth_city|default:'' }}"></div>
+            <button class="btn-save" id="buyerSaveProfileBtn">Enregistrer les modifications</button>
+          </div>
+        </div>
+
+        <!-- Déconnexion mobile — profil acheteur -->
+        <button class="m-logout-btn" onclick="mAchLogout()" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Se déconnecter
+        </button>
+        <!-- Modal confirmation déconnexion -->
+        <div id="mLogoutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;align-items:flex-end;justify-content:center;">
+          <div style="background:#fff;border-radius:24px 24px 0 0;padding:32px 24px;width:100%;max-width:480px;">
+            <div style="text-align:center;margin-bottom:24px;">
+              <div style="width:56px;height:56px;background:#FEE2E2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              </div>
+              <h3 style="font-size:1.1rem;font-weight:700;color:#131E16;margin-bottom:8px;font-family:'Plus Jakarta Sans',sans-serif;">Se déconnecter ?</h3>
+              <p style="font-size:0.875rem;color:#8FA497;font-family:'Plus Jakarta Sans',sans-serif;">Vous serez redirigé vers la page de connexion.</p>
+            </div>
+            <div style="display:flex;gap:12px;">
+              <button onclick="document.getElementById('mLogoutModal').style.display='none'"
+                style="flex:1;padding:14px;border-radius:12px;border:1.5px solid #E3EDE6;background:#fff;font-size:0.9rem;font-weight:600;color:#4E6558;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">Annuler</button>
+              <a href="{% url 'logout' %}"
+                style="flex:1;padding:14px;border-radius:12px;border:none;background:#ef4444;color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;text-decoration:none;display:flex;align-items:center;justify-content:center;">Confirmer</a>
+            </div>
+          </div>
+        </div>
+        <script>
+        function mAchLogout(){document.getElementById('mLogoutModal').style.display='flex';}
+        document.addEventListener('click',function(e){var m=document.getElementById('mLogoutModal');if(m&&e.target===m)m.style.display='none';});
+        </script>
+      </div>
+
+      <!-- ═══ PARAMÈTRES ═══ -->
+      <div class="section" id="sec-parametres">
+        <div class="page-header">
+          <div class="page-title">Paramètres</div>
+          <div class="page-desc">Personnalisez votre expérience AgriGov Market selon vos préférences.</div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Apparence</div></div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--input-bg);border-radius:14px;border:1px solid var(--border)">
+                <div><div style="font-weight:600;color:var(--text-primary);font-size:14px">Mode sombre</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">Thème foncé pour un confort visuel</div></div>
+                <div class="toggle-switch" id="toggle-settings" onclick="toggleDark()" style="cursor:pointer"><div class="toggle-thumb"></div></div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--input-bg);border-radius:14px;border:1px solid var(--border)">
+                <div><div style="font-weight:600;color:var(--text-primary);font-size:14px">Notifications push</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">Recevoir des alertes en temps réel</div></div>
+                <div class="toggle-switch on" onclick="this.classList.toggle('on')" style="cursor:pointer"><div class="toggle-thumb"></div></div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--input-bg);border-radius:14px;border:1px solid var(--border)">
+                <div><div style="font-weight:600;color:var(--text-primary);font-size:14px">E-mails récapitulatifs</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">Résumé hebdomadaire par e-mail</div></div>
+                <div class="toggle-switch" onclick="this.classList.toggle('on')" style="cursor:pointer"><div class="toggle-thumb"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Sécurité</div></div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div class="form-group"><label>Mot de passe actuel</label><input type="password" id="buyerPasswordCurrent" placeholder="••••••••"></div>
+              <div class="form-group"><label>Nouveau mot de passe</label><input type="password" id="buyerPasswordNew" placeholder="Minimum 8 caractères"></div>
+              <div class="form-group"><label>Confirmer</label><input type="password" id="buyerPasswordConfirm" placeholder="Répétez le mot de passe"></div>
+              <button class="btn-save" style="width:100%" id="buyerChangePasswordBtn">Changer le mot de passe</button>
+            </div>
+          </div>
+        </div>
+        <!-- Mobile: bouton déconnexion avec confirmation -->
+        <button class="m-logout-btn" onclick="mAchLogout()" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Se déconnecter
+        </button>
+
+        <!-- Confirmation modal déconnexion -->
+        <div id="mLogoutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:flex-end;justify-content:center;">
+          <div style="background:#fff;border-radius:24px 24px 0 0;padding:32px 24px;width:100%;max-width:480px;animation:mFadeUp 0.3s ease;">
+            <div style="text-align:center;margin-bottom:24px;">
+              <div style="width:56px;height:56px;background:#FEE2E2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              </div>
+              <h3 style="font-size:1.1rem;font-weight:700;color:#131E16;margin-bottom:8px;">Se déconnecter ?</h3>
+              <p style="font-size:0.875rem;color:#8FA497;">Vous allez quitter votre espace acheteur et serez redirigé vers la page de connexion.</p>
+            </div>
+            <div style="display:flex;gap:12px;">
+              <button onclick="document.getElementById('mLogoutModal').style.display='none'"
+                style="flex:1;padding:14px;border-radius:12px;border:1.5px solid #E3EDE6;background:#fff;font-size:0.9rem;font-weight:600;color:#4E6558;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
+                Annuler
+              </button>
+              <a href="{% url 'logout' %}"
+                style="flex:1;padding:14px;border-radius:12px;border:none;background:#ef4444;color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;text-decoration:none;display:flex;align-items:center;justify-content:center;">
+                Confirmer
+              </a>
+            </div>
+          </div>
+        </div>
+        <script>
+        function mAchLogout() {
+          var m = document.getElementById('mLogoutModal');
+          if(m) { m.style.display = 'flex'; }
+        }
+        document.getElementById('mLogoutModal')?.addEventListener('click', function(e) {
+          if(e.target === this) this.style.display = 'none';
+        });
+        </script>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app-layout -->
+<script src="{% static 'js/profile-common.js' %}"></script>
+<script src="{% static 'js/achateur.js' %}"></script>
+<script src="{% static 'js/agrigov-chatbot.js' %}"></script>
+<script src="{% static 'js/pwa-register.js' %}"></script>
+
+<!-- ═══ MOBILE BOTTOM NAV — ACHETEUR ═══ -->
+<nav class="m-bottom-nav" id="mBottomNav">
+  <button class="m-nav-tab active" id="mTab-dashboard" onclick="mAchTo('dashboard')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Accueil</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-produits" onclick="mAchTo('produits')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span>Explorer</span>
+  </button>
+  <div class="m-nav-fab-wrap" onclick="mAchTo('produits');setTimeout(()=>toggleBuyerCart&&toggleBuyerCart(true),300)">
+    <button class="m-nav-fab"><svg viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5" stroke-linecap="round" width="26" height="26"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></button>
+    <span class="m-nav-fab-label">Panier</span>
+  </div>
+  <button class="m-nav-tab" id="mTab-livraison" onclick="mAchTo('livraison')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    <span>Livraison</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-commandes" onclick="mAchTo('commandes')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+    <span>Commandes</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-profil" onclick="mAchTo('profil')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Profil</span>
+  </button>
+</nav>
+<script>
+function mAchTo(page) {
+  if(typeof navigate === 'function') navigate(page);
+  document.querySelectorAll('.m-nav-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('mTab-' + page);
+  if(tab) tab.classList.add('active');
+}
+const _origNav = typeof navigate !== 'undefined' ? navigate : null;
+if(_origNav) {
+  window.navigate = function(page) {
+    _origNav(page);
+    document.querySelectorAll('.m-nav-tab').forEach(t => t.classList.remove('active'));
+    const tab = document.getElementById('mTab-' + page);
+    if(tab) tab.classList.add('active');
+  };
+}
+</script>
+</body>
+</html>

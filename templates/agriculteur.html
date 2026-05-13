@@ -1,0 +1,1036 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriGov - Agriculteur</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+ <link rel="stylesheet" href="{% static 'css/agricultur.css' %}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- PWA Mobile -->
+<meta name="theme-color" content="#2d7a2d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AgriGov">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
+<link rel="stylesheet" href="{% static 'css/pwa-mobile.css' %}">
+</head>
+<body>
+
+  <div class="agri-toast" id="agriToast">Action réalisée</div>
+
+  <div class="agri-layout">
+    <aside class="agri-sidebar" id="agriSidebar">
+      <div>
+        <div class="agri-brand-row">
+          <div class="agri-brand" style="margin-bottom:0;flex:1;">
+            <div class="agri-brand-logo">🌿</div>
+            <div>
+              <h2>AgriGov</h2>
+              <p>Farmer Panel</p>
+            </div>
+          </div>
+          <button class="agri-sidebar-close-btn" onclick="closeAgriSidebar()" title="Fermer le menu">&#10005;</button>
+        </div>
+
+        <nav class="agri-nav">
+          <a href="#" class="agri-nav-link active" data-page="agriDashboardPage"><span>🏠</span> Tableau de bord</a>
+          <a href="#" class="agri-nav-link" data-page="agriProductsPage"><span>🥕</span> Mes Produits</a>
+          <a href="#" class="agri-nav-link" data-page="agriOrdersPage"><span>📦</span> Commandes</a>
+          <a href="#" class="agri-nav-link" data-page="agriAdvantagesPage"><span>🎁</span> soutient</a>
+          <a href="#" class="agri-nav-link" data-page="agriFarmsPage"><span>🌾</span> Mes Fermes</a>
+          <a href="#" class="agri-nav-link" data-page="agriAidePage"><span>🩺</span> Aide agriculteur</a>
+          <a href="#" class="agri-nav-link" data-page="agriProfilePage"><span>👤</span> Profil</a>
+        </nav>
+      </div>
+
+      <div class="agri-sidebar-help">
+        <h4>Aide rapide</h4>
+        <p>Suivez vos ventes, produits, commandes et fermes depuis un seul espace.</p>
+      </div>
+
+      <div style="padding: 16px;">
+        <a href="{% url 'logout' %}" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:rgba(255,100,100,0.12);color:#e05555;font-weight:600;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,100,100,0.22)'" onmouseout="this.style.background='rgba(255,100,100,0.12)'" class="m-desktop-only">
+          <span>🚪</span> Déconnexion
+        </a>
+      </div>
+    </aside>
+
+    <main class="agri-main">
+
+      <!-- DASHBOARD -->
+      <section class="agri-page active" id="agriDashboardPage">
+        <header class="agri-topbar agri-glass">
+          <button class="agri-mob-toggle" onclick="toggleAgriSidebar()" title="Menu">☰</button>
+          <div class="agri-search-box">
+            <span class="agri-search-icon">🔎</span>
+            <input type="text" placeholder="Rechercher commande, produit, acheteur..." />
+          </div>
+
+          <div class="agri-topbar-actions">
+            <button class="agri-icon-btn agri-notification-btn" type="button" title="Notifications">🔔<span class="agri-notification-count">0</span></button>
+            <button class="agri-icon-btn agri-theme-toggle">🌙</button>
+            <div class="agri-profile-chip">
+              <img id="agriHeaderAvatar" src="{% if request.user.profile.profile_photo %}{{ request.user.profile.profile_photo.url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='100%25' height='100%25' fill='%23dfe7dd'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='72' fill='%23265c3a'>{{ request.user.first_name|default:request.user.username|first|upper }}</text></svg>{% endif %}" alt="Profil" />
+              <div>
+                <strong id="agriHeaderName">{{ request.user.get_full_name|default:request.user.username }}</strong>
+                <small id="agriHeaderRole">Agriculteur vérifié</small>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="agri-page-head">
+          <div>
+            <h1>Tableau De Bord</h1>
+            <p>Vue globale sur les ventes, revenus, produits actifs, commandes, alertes et prix officiels.</p>
+          </div>
+
+          <div class="agri-head-actions">
+            <button class="agri-btn agri-btn-primary" id="agriDashboardAddProductBtn">+ Ajouter Produit</button>
+            <button class="agri-btn agri-btn-light" id="agriDashboardViewFarmsBtn">Voir les fermes</button>
+          </div>
+        </section>
+
+        <section class="agri-dashboard-stats">
+          <article class="agri-stat-card agri-glass">
+            <div class="agri-stat-icon">💰</div>
+            <div>
+              <span class="agri-stat-label">Total Ventes</span>
+              <h3>0 DA</h3>
+              <small class="agri-text-success">Synchronisation...</small>
+            </div>
+          </article>
+
+          <article class="agri-stat-card agri-glass">
+            <div class="agri-stat-icon">📦</div>
+            <div>
+              <span class="agri-stat-label">Produits Actifs</span>
+              <h3>0</h3>
+              <small>Synchronisation...</small>
+            </div>
+          </article>
+
+          <article class="agri-stat-card agri-glass">
+            <div class="agri-stat-icon">🧾</div>
+            <div>
+              <span class="agri-stat-label">Commandes en cours</span>
+              <h3>0</h3>
+              <small>Synchronisation...</small>
+            </div>
+          </article>
+
+          <article class="agri-stat-card agri-glass">
+            <div class="agri-stat-icon">⭐</div>
+            <div>
+              <span class="agri-stat-label">Évaluation</span>
+              <h3>0</h3>
+              <small>Synchronisation...</small>
+            </div>
+          </article>
+        </section>
+
+        <section class="agri-dashboard-grid">
+          <div class="agri-dashboard-left">
+            <div class="agri-chart-grid">
+              <article class="agri-panel agri-glass">
+                <div class="agri-panel-head">
+                  <div>
+                    <h3>Ventes Mensuelles (DA)</h3>
+                    <p>Évolution des ventes mensuelles</p>
+                  </div>
+                </div>
+                <canvas id="agriSalesChart"></canvas>
+              </article>
+
+              <article class="agri-panel agri-glass">
+                <div class="agri-panel-head">
+                  <div>
+                    <h3>Commandes par Statut</h3>
+                    <p>Répartition des commandes</p>
+                  </div>
+                </div>
+                <canvas id="agriOrdersChart"></canvas>
+              </article>
+            </div>
+          </div>
+
+          <aside class="agri-dashboard-right">
+            <article class="agri-panel agri-glass" id="agriDashNotifPanel">
+              <div class="agri-panel-head">
+                <div>
+                  <h3>🔔 Notifications</h3>
+                  <p>Alertes importantes</p>
+                </div>
+              </div>
+
+              <div class="agri-notif-list">
+                <div class="agri-notif-item">
+                  <div class="agri-notif-dot agri-dot-orange"></div>
+                  <div>
+                    <strong>Stock faible</strong>
+                    <p>Synchronisation des stocks en cours.</p>
+                  </div>
+                </div>
+
+                <div class="agri-notif-item">
+                  <div class="agri-notif-dot agri-dot-green"></div>
+                  <div>
+                    <strong>Commande confirmée</strong>
+                    <p>Synchronisation des commandes en cours.</p>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </aside>
+        </section>
+      </section>
+
+
+      <!-- AVANTAGES -->
+      <section class="agri-page" id="agriAdvantagesPage">
+        <header class="agri-topbar agri-glass">
+          <button class="agri-mob-toggle" onclick="toggleAgriSidebar()" title="Menu">&#9776;</button>
+          <div class="agri-search-box">
+            <span class="agri-search-icon">🔎</span>
+            <input id="agriBenefitSearch" type="text" placeholder="Rechercher un soutien..."/>
+          </div>
+          <div class="agri-topbar-actions">
+            <button class="agri-icon-btn agri-notification-btn" type="button" title="Notifications">🔔<span class="agri-notification-count">0</span></button>
+            <button class="agri-icon-btn agri-theme-toggle">🌙</button>
+            <div class="agri-profile-chip">
+              <img class="agri-global-avatar" src="{% if request.user.profile.profile_photo %}{{ request.user.profile.profile_photo.url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='100%25' height='100%25' fill='%23dfe7dd'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='72' fill='%23265c3a'>{{ request.user.first_name|default:request.user.username|first|upper }}</text></svg>{% endif %}" alt="profil">
+              <div>
+                <strong class="agri-global-name">{{ request.user.get_full_name|default:request.user.username }}</strong>
+                <small class="agri-global-role">Agriculteur vérifié</small>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="agri-page-head">
+          <div>
+            <h1>Soutient disponibles</h1>
+            <p>Choisissez un soutien, consultez les conditions puis envoyez votre demande à l’administration.</p>
+          </div>
+          <div class="agri-head-actions">
+            <button class="agri-btn agri-btn-light" id="agriRefreshBenefitsBtn">Actualiser</button>
+            <button class="agri-btn agri-btn-primary" id="agriMyRequestsBtn">Mes demandes</button>
+          </div>
+        </section>
+
+        <section class="agri-benefits-grid" id="agriBenefitsGrid">
+          <article class="agri-panel agri-glass agri-benefit-loading">Chargement des avantages...</article>
+        </section>
+
+        <section class="agri-panel agri-glass agri-requests-panel">
+          <div class="agri-panel-head">
+            <div>
+              <h3>Suivi de mes demandes</h3>
+              <p>Statut des demandes envoyées à l’administration.</p>
+            </div>
+          </div>
+          <div class="agri-table-wrap">
+            <table class="agri-benefits-table">
+              <thead><tr><th>soutient</th><th>Date</th><th>Statut</th><th>Note</th></tr></thead>
+              <tbody id="agriMyBenefitRequestsBody"><tr><td colspan="4">Aucune demande pour le moment.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- PRODUITS -->
+      <section class="agri-page" id="agriProductsPage">
+        <header class="agri-topbar agri-glass">
+          <button class="agri-mob-toggle" onclick="toggleAgriSidebar()" title="Menu">&#9776;</button>
+          <div class="agri-search-box">
+            <span class="agri-search-icon">🔎</span>
+            <input id="agriProductsSearchInput" type="text" placeholder="Rechercher un produit..." />
+          </div>
+
+          <div class="agri-topbar-actions">
+            <button class="agri-icon-btn agri-notification-btn" type="button" title="Notifications">🔔<span class="agri-notification-count">0</span></button>
+            <button class="agri-icon-btn agri-theme-toggle">🌙</button>
+            <div class="agri-profile-chip">
+              <img class="agri-global-avatar" src="{% if request.user.profile.profile_photo %}{{ request.user.profile.profile_photo.url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='100%25' height='100%25' fill='%23dfe7dd'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='72' fill='%23265c3a'>{{ request.user.first_name|default:request.user.username|first|upper }}</text></svg>{% endif %}" alt="profil">
+              <div>
+                <strong class="agri-global-name">{{ request.user.get_full_name|default:request.user.username }}</strong>
+                <small class="agri-global-role">Agriculteur vérifié</small>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="agri-page-head">
+          <div>
+            <h1>Mes Produits</h1>
+            <p>Ajout, filtre, contrôle des prix min/max et suivi rapide des produits publiés.</p>
+          </div>
+        </section>
+
+        <section class="agri-products-charts">
+          <article class="agri-panel agri-glass">
+            <div class="agri-panel-head">
+              <div>
+                <h3>Total Produits</h3>
+                <p>Répartition globale</p>
+              </div>
+            </div>
+            <canvas id="agriTotalProductsChart" height="120"></canvas>
+          </article>
+
+          <article class="agri-panel agri-glass">
+            <div class="agri-panel-head">
+              <div>
+                <h3>Produits Ajoutés</h3>
+                <p>Ajouts mensuels</p>
+              </div>
+            </div>
+            <canvas id="agriAddedProductsChart" height="120"></canvas>
+          </article>
+        </section>
+
+        <section class="agri-toolbar agri-glass">
+          <div class="agri-toolbar-left">
+            <select id="agriCategoryFilter">
+              <option value="all">Toutes les catégories</option>
+              <option value="Legume">Légumes</option>
+              <option value="Fruit">Fruits</option>
+              <option value="Animal">Animal</option>
+              <option value="Cereale">Céréale</option>
+            </select>
+
+            <select id="agriStatusFilter">
+              <option value="all">Tous les statuts</option>
+              <option value="Disponible">Disponible</option>
+              <option value="Stock faible">Stock faible</option>
+              <option value="Rupture">Rupture</option>
+            </select>
+          </div>
+
+          <div class="agri-toolbar-right">
+            <button class="agri-btn agri-btn-primary" id="agriOpenProductModalBtn">+ Ajouter</button>
+          </div>
+        </section>
+
+        <section class="agri-panel agri-glass agri-products-board-panel">
+          <div class="agri-panel-head">
+            <div>
+              <h3>Produits en cartes</h3>
+              <p>Petites cartes modernes avec statut visuel, rupture en rouge et actions rapides.</p>
+            </div>
+            <span class="agri-board-badge">✨ Vue pro</span>
+          </div>
+
+          <div id="agriProductsCards" class="agri-products-mini-grid"></div>
+          <div class="agri-table-wrap agri-hidden-product-table" aria-hidden="true">
+            <table class="agri-table"><tbody id="agriProductsTableBody"></tbody></table>
+          </div>
+        </section>
+      </section>
+
+      <!-- COMMANDES -->
+      <section class="agri-page" id="agriOrdersPage">
+        <div class="agri-section-topbar">
+          <button class="agri-mob-toggle" onclick="toggleAgriSidebar()" title="Menu">&#9776;</button>
+          <div class="agri-page-title">
+            <h1>Mes Commandes</h1>
+            <p>Gérer les nouvelles commandes et suivre la livraison.</p>
+          </div>
+
+          <div class="agri-section-actions">
+            <button class="agri-icon-btn agri-theme-toggle">🌙</button>
+            <input type="text" id="agriOrdersSearchInput" class="agri-input-search" placeholder="Rechercher une commande..." />
+          </div>
+        </div>
+
+        <section class="agri-orders-stats agri-orders-stats-pro">
+          <div class="agri-stat-box"><h3>📦 Total Commandes</h3><div class="agri-stat-number" id="agriOrdersTotal">0</div></div>
+          <div class="agri-stat-box"><h3>🆕 Nouvelles</h3><div class="agri-stat-number" id="agriOrdersNew">0</div></div>
+          <div class="agri-stat-box"><h3>🚚 En Livraison</h3><div class="agri-stat-number" id="agriOrdersProgress">0</div></div>
+          <div class="agri-stat-box"><h3>✅ Livrées</h3><div class="agri-stat-number" id="agriOrdersDelivered">0</div></div>
+        </section>
+
+        <section class="agri-order-analytics agri-glass">
+          <div>
+            <h3>📊 Commandes animées</h3>
+            <p>Lecture rapide des statuts et du volume traité.</p>
+          </div>
+          <canvas id="agriOrderWorkflowChart" height="86"></canvas>
+        </section>
+
+        <div class="agri-tabs">
+          <button class="agri-tab-btn active" data-filter="all">Tous</button>
+          <button class="agri-tab-btn" data-filter="new">Nouvelles</button>
+          <button class="agri-tab-btn" data-filter="progress">En cours</button>
+          <button class="agri-tab-btn" data-filter="delivered">Livrées</button>
+          <button class="agri-tab-btn" data-filter="refused">Refusées</button>
+        </div>
+
+        <section class="agri-panel agri-orders-board-panel">
+          <div class="agri-panel-head">
+            <div>
+              <h2>Liste des Commandes</h2>
+              <p>Commandes organisées sous forme de cartes claires, rapides à traiter.</p>
+            </div>
+          </div>
+          <div id="agriOrdersContainer" class="agri-orders-list agri-orders-cards"></div>
+        </section>
+      </section>
+
+      <!-- FERMES -->
+      <section class="agri-page" id="agriFarmsPage">
+        <header class="agri-topbar agri-glass">
+          <button class="agri-mob-toggle" onclick="toggleAgriSidebar()" title="Menu">&#9776;</button>
+          <div class="agri-search-box">
+            <span class="agri-search-icon">🔎</span>
+            <input type="text" id="agriFarmsSearchInput" placeholder="Rechercher une ferme..." />
+          </div>
+
+          <div class="agri-topbar-actions">
+            <button class="agri-icon-btn" id="agriAddFarmBtn">＋</button>
+            <button class="agri-icon-btn agri-theme-toggle">🌙</button>
+          </div>
+        </header>
+
+        <section class="agri-farms-stats">
+          <div class="agri-stat-box">
+            <h3>Total Fermes</h3>
+            <div class="agri-stat-number" id="agriFarmsTotal">0</div>
+          </div>
+          <div class="agri-stat-box">
+            <h3>Ferme Principale</h3>
+            <div class="agri-stat-number" id="agriFarmsMain">1</div>
+          </div>
+          <div class="agri-stat-box">
+            <h3>Wilayas</h3>
+            <div class="agri-stat-number" id="agriFarmsWilayas">0</div>
+          </div>
+        </section>
+
+        <div class="agri-farm-hero-shell">
+          <div id="agriFarmInfoBox" class="agri-farm-3d-card">
+            <div class="agri-farm-3d-loading">Chargement de la carte ferme 3D...</div>
+          </div>
+        </div>
+
+        <div class="agri-farms-grid agri-farms-grid-pro agri-farms-grid-clean">
+          <section class="agri-panel agri-farm-premium-panel">
+            <div class="agri-panel-head">
+              <div><h2>🌾 Mes fermes</h2><p>Sélectionnez une ferme pour afficher ses informations.</p></div>
+              <span class="agri-board-badge">Pro</span>
+            </div>
+            <div id="agriFarmsContainer" class="agri-farms-list agri-farms-premium-list"></div>
+          </section>
+        </div>
+      </section>
+      <!-- PROFIL -->
+      <section class="agri-page" id="agriProfilePage">
+        <div class="agri-profile-topbar">
+          <button class="agri-mob-toggle" onclick="toggleAgriSidebar()" title="Menu">&#9776;</button>
+          <h1>Mon Profil</h1>
+          <button class="agri-save-btn" id="agriSaveProfileBtn">💾 Enregistrer</button>
+        </div>
+
+        <div class="agri-profile-grid">
+          <div class="agri-profile-card">
+            <div class="agri-avatar">
+              <img src="{% if request.user.profile.profile_photo %}{{ request.user.profile.profile_photo.url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><rect width='100%25' height='100%25' fill='%23dfe7dd'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='54' fill='%23265c3a'>{{ request.user.first_name|default:request.user.username|first|upper }}</text></svg>{% endif %}" id="agriAvatarImg" class="agri-global-avatar" alt="avatar">
+              <input type="file" id="agriAvatarInput">
+            </div>
+
+            <h2 id="agriNameDisplay" class="agri-global-name">{{ request.user.get_full_name|default:request.user.username }}</h2>
+            <p>Agriculteur</p>
+            <div class="agri-rating">⭐ 4.8</div>
+          </div>
+
+          <div class="agri-info-card">
+            <h3>Informations</h3>
+
+            <div class="agri-form-group">
+              <label>Nom</label>
+              <input type="text" id="agriProfileName" value="{{ request.user.get_full_name|default:request.user.username }}">
+            </div>
+
+            <div class="agri-form-group">
+              <label>Email</label>
+              <input type="email" id="agriProfileEmail" value="{{ request.user.email|default:request.user.username }}">
+            </div>
+
+            <div class="agri-form-group">
+              <label>Téléphone</label>
+              <input type="text" id="agriProfilePhone" value="{{ initial_profile.phone|default:'' }}">
+            </div>
+
+            <div class="agri-form-group">
+              <label>Wilaya</label>
+              <input type="text" id="agriProfileWilaya" value="{{ initial_profile.wilaya|default:initial_profile.city }}">
+            </div>
+          </div>
+
+          <div class="agri-profile-stats-card">
+            <div><h3>Fermes</h3><p id="agriStatsFarms">0</p></div>
+            <div><h3>Commandes</h3><p>25</p></div>
+            <div><h3>Produits</h3><p>12</p></div>
+          </div>
+
+          <div class="agri-info-card">
+            <h3>Sécurité</h3>
+            <div class="agri-form-group">
+              <label>Mot de passe actuel</label>
+              <input type="password" id="agriPasswordCurrent" placeholder="••••••••">
+            </div>
+            <div class="agri-form-group">
+              <label>Nouveau mot de passe</label>
+              <input type="password" id="agriPasswordNew" placeholder="Minimum 8 caractères">
+            </div>
+            <div class="agri-form-group">
+              <label>Confirmer</label>
+              <input type="password" id="agriPasswordConfirm" placeholder="Répétez le mot de passe">
+            </div>
+            <button class="agri-save-btn" id="agriChangePasswordBtn">🔒 Changer mot de passe</button>
+          </div>
+        </div>
+        <!-- Mobile: bouton déconnexion dans Profil uniquement -->
+        <a href="{% url 'logout' %}" class="m-logout-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Se déconnecter
+        </a>
+      </section>
+
+      <section class="agri-page" id="agriAidePage">
+
+        <header class="agri-topbar agri-glass">
+          <button class="agri-mob-toggle" onclick="toggleAgriSidebar()" title="Menu">&#9776;</button>
+          <div class="agri-search-box">
+            <span class="agri-search-icon">🔎</span>
+            <input type="text" placeholder="Rechercher un vétérinaire, une tournée..." id="aideSearchInput" />
+          </div>
+          <div class="agri-topbar-actions">
+            <button class="agri-icon-btn agri-notification-btn" type="button" title="Notifications">🔔<span class="agri-notification-count">0</span></button>
+            <button class="agri-icon-btn agri-theme-toggle">🌙</button>
+            <div class="agri-profile-chip">
+              <img class="agri-global-avatar" src="{% if request.user.profile.profile_photo %}{{ request.user.profile.profile_photo.url }}{% else %}data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='100%25' height='100%25' fill='%23dfe7dd'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='72' fill='%23265c3a'>{{ request.user.first_name|default:request.user.username|first|upper }}</text></svg>{% endif %}" alt="profil">
+              <div>
+                <strong class="agri-global-name">{{ request.user.get_full_name|default:request.user.username }}</strong>
+                <small class="agri-global-role">Agriculteur vérifié</small>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="agri-page-head">
+          <div>
+            <h1>Aide chez l'agriculteur</h1>
+            <p>Consultez les vétérinaires disponibles, prenez des rendez-vous et suivez les tournées organisées sur votre région.</p>
+          </div>
+          <div class="agri-head-actions">
+            <button class="agri-btn agri-btn-primary" onclick="document.getElementById('aideRdvModal').classList.add('active')">📅 Prendre un RDV</button>
+            <button class="agri-btn agri-btn-light" onclick="aideSwitchTab(aideActiveTab)">🔄 Actualiser</button>
+          </div>
+        </section>
+
+        <!-- ONGLETS PRINCIPAUX -->
+        <div class="aide-tabs">
+          <button class="aide-tab-btn active" data-tab="vet" onclick="aideSwitchTab('vet')">🩺 Vétérinaire</button>
+          <button class="aide-tab-btn" data-tab="plantes" onclick="aideSwitchTab('plantes')">🌿 Organisateur des plantes</button>
+        </div>
+
+        <!-- ══════════════════════════════════════
+             SECTION : VÉTÉRINAIRE
+        ══════════════════════════════════════ -->
+        <div class="aide-tab-section" data-section="vet">
+
+          <!-- Liste des vétérinaires -->
+          <article class="agri-panel agri-glass" style="margin-bottom:22px;">
+            <div class="agri-panel-head">
+              <div>
+                <h3>👨‍⚕️ Vétérinaires disponibles</h3>
+                <p>Consultez les vétérinaires de l'application, leurs spécialités, localisation et tarifs.</p>
+              </div>
+              <button class="agri-btn agri-btn-light" style="font-size:0.82rem" onclick="aideLoadVets()">🔄 Actualiser</button>
+            </div>
+            <div class="aide-vets-grid" id="aideVetsGrid">
+              <div class="aide-loading">⏳ Chargement des vétérinaires...</div>
+            </div>
+          </article>
+
+          <!-- Prendre un rendez-vous — section compacte -->
+          <article class="agri-panel agri-glass" style="margin-bottom:22px;">
+            <div class="agri-panel-head">
+              <div>
+                <h3>📅 Mes rendez-vous vétérinaires</h3>
+                <p>Historique et suivi de vos rendez-vous avec les vétérinaires.</p>
+              </div>
+              <button class="agri-btn agri-btn-primary" onclick="document.getElementById('aideRdvModal').classList.add('active')">+ Nouveau RDV</button>
+            </div>
+            <div class="agri-table-wrap">
+              <table class="agri-table">
+                <thead>
+                  <tr>
+                    <th>Vétérinaire</th>
+                    <th>Type</th>
+                    <th>Date & Heure</th>
+                    <th>Lieu</th>
+                    <th>Statut</th>
+                    <th>Compte-rendu</th>
+                  </tr>
+                </thead>
+                <tbody id="aideMesRdvsBody">
+                  <tr><td colspan="6" class="aide-table-empty">⏳ Chargement...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <!-- Tournées vétérinaires -->
+          <article class="agri-panel agri-glass">
+            <div class="agri-panel-head">
+              <div>
+                <h3>🚗 Tournées vétérinaires à venir</h3>
+                <p>Campagnes et déplacements des vétérinaires annoncés dans votre région.</p>
+              </div>
+              <button class="agri-btn agri-btn-light" style="font-size:0.82rem" onclick="aideLoadVetTournees()">🔄 Actualiser</button>
+            </div>
+            <div class="aide-tournees-list" id="aideVetTourneesContainer">
+              <div class="aide-loading">⏳ Chargement des tournées...</div>
+            </div>
+          </article>
+
+        </div>
+
+        <!-- ══════════════════════════════════════
+             SECTION : ORGANISATEUR DES PLANTES
+        ══════════════════════════════════════ -->
+        <div class="aide-tab-section" data-section="plantes" style="display:none;">
+
+          <article class="agri-panel agri-glass">
+            <div class="agri-panel-head">
+              <div>
+                <h3>🌿 Tournées & Campagnes — Organisateur des plantes</h3>
+                <p>Informations à venir sur les tournées et campagnes organisées pour les cultures végétales.</p>
+              </div>
+              <button class="agri-btn agri-btn-light" style="font-size:0.82rem" onclick="aideLoadPlantesTournees()">🔄 Actualiser</button>
+            </div>
+            <div class="aide-tournees-list" id="aidePlantesTourneesContainer">
+              <div class="aide-loading">⏳ Chargement des informations de l'organisateur...</div>
+            </div>
+          </article>
+
+        </div>
+
+      </section>
+      <section class="agri-page" id="agriNotificationsPage">
+        <div class="agri-section-topbar">
+          <button class="agri-mob-toggle" onclick="toggleAgriSidebar()" title="Menu">&#9776;</button>
+          <div class="agri-page-title"><h2>🔔 Notifications</h2><p>Vos alertes, confirmations de RDV et annonces vétérinaires</p></div>
+          <button class="agri-btn agri-btn-light" style="font-size:0.8rem" onclick="agriLoadNotifications()">↻ Actualiser</button>
+        </div>
+        <div class="agri-panel agri-glass">
+          <div id="agriNotificationsContainer"><div class="agri-empty-state" style="padding:32px;text-align:center;color:#888">Chargement des notifications...</div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL PRODUIT -->
+  <div class="agri-modal-overlay" id="agriProductModal">
+    <div class="agri-modal-box">
+      <div class="agri-modal-head">
+        <h2 id="agriProductModalTitle">Ajouter Produit</h2>
+        <button class="agri-close-btn" id="agriCloseProductModalBtn">✖</button>
+      </div>
+
+      <div class="agri-form-grid">
+        <div class="agri-field">
+          <label>Produit</label>
+          <select id="agriProductSelect"></select>
+        </div>
+
+        <div class="agri-field">
+          <label>Catégorie</label>
+          <input type="text" id="agriProductCategory" readonly />
+        </div>
+
+        <input type="hidden" id="agriPriceMin" value="" />
+        <input type="hidden" id="agriPriceMax" value="" />
+
+        <div class="agri-field">
+          <label>Quantité</label>
+          <input type="number" id="agriProductQty" placeholder="Ex: 120" />
+        </div>
+
+        <div class="agri-field agri-price-field full">
+          <label>Prix Choisi</label>
+          <input type="number" id="agriProductPrice" placeholder="Ex: 120" />
+          <small id="agriPriceHint" class="agri-price-hint">Le prix doit etre entre les limites officielles du produit.</small>
+        </div>
+
+        <div class="agri-field">
+          <label>Photo</label>
+          <input type="file" id="agriProductPhoto" accept="image/*" />
+          <input type="hidden" id="agriExistingProductPhoto" value="" />
+        </div>
+
+        <div class="agri-field">
+          <label>Statut</label>
+          <select id="agriProductStatus">
+            <option>Disponible</option>
+            <option>Stock faible</option>
+            <option>Rupture</option>
+          </select>
+        </div>
+
+        <div class="agri-field full">
+          <label>Description</label>
+          <textarea id="agriProductDescription" rows="4" placeholder="Description du produit..."></textarea>
+        </div>
+
+        <input type="hidden" id="agriEditingProductId" value="">
+      </div>
+
+      <div class="agri-modal-actions">
+        <button class="agri-btn agri-btn-light" id="agriCancelProductModalBtn">Annuler</button>
+        <button class="agri-btn agri-btn-primary" id="agriSaveProductBtn">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL DEMANDE AVANTAGE -->
+  <div class="agri-modal" id="agriBenefitRequestModal">
+    <div class="agri-modal-content agri-benefit-modal-content">
+      <div class="agri-modal-header">
+        <div>
+          <h2 id="agriBenefitModalTitle">Demander un soutien</h2>
+          <p id="agriBenefitModalDescription" class="agri-muted"></p>
+        </div>
+        <button class="agri-close-btn" id="agriCloseBenefitModalBtn">×</button>
+      </div>
+
+      <div class="agri-benefit-detail-box">
+        <div>
+          <strong>Conditions</strong>
+          <p id="agriBenefitModalConditions"></p>
+        </div>
+        <div>
+          <strong>Documents requis</strong>
+          <p id="agriBenefitModalDocs"></p>
+        </div>
+      </div>
+
+      <form id="agriBenefitRequestForm" enctype="multipart/form-data">
+        <input type="hidden" id="agriBenefitId" />
+        <div class="agri-form-grid">
+          <div class="agri-field">
+            <label>Nom complet</label>
+            <input type="text" id="agriBenefitFullName" value="{{ request.user.get_full_name|default:request.user.username }}" required />
+          </div>
+          <div class="agri-field">
+            <label>Téléphone</label>
+            <input type="text" id="agriBenefitPhone" placeholder="Ex: 0555 12 34 56" />
+          </div>
+          <div class="agri-field">
+            <label>Wilaya</label>
+            <input type="text" id="agriBenefitWilaya" placeholder="Ex: Constantine" />
+          </div>
+          <div class="agri-field">
+            <label>Document justificatif</label>
+            <input type="file" id="agriBenefitDocument" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" />
+          </div>
+          <div class="agri-field full">
+            <label>Description du projet</label>
+            <textarea id="agriBenefitProject" rows="4" placeholder="Expliquez brièvement votre projet agricole..."></textarea>
+          </div>
+        </div>
+        <div class="agri-modal-actions">
+          <button type="button" class="agri-btn agri-btn-light" id="agriCancelBenefitRequestBtn">Annuler</button>
+          <button type="submit" class="agri-btn agri-btn-primary">Envoyer la demande</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL FERME -->
+  <div class="agri-modal" id="agriFarmModal">
+    <div class="agri-modal-content agri-small-modal">
+      <div class="agri-modal-header">
+        <h2>Ajouter une ferme</h2>
+        <button class="agri-close-btn" id="agriCloseFarmModalBtn">×</button>
+      </div>
+
+      <div class="agri-form-group">
+        <label>Nom de la ferme</label>
+        <input type="text" id="agriFarmName" placeholder="Ex: Ferme Benali" />
+      </div>
+
+      <div class="agri-form-group">
+        <label>Wilaya</label>
+        <input type="text" id="agriFarmWilaya" placeholder="Ex: Oran" />
+      </div>
+
+      <div class="agri-double-fields">
+        <div class="agri-form-group">
+          <label>Lieu / Localité</label>
+          <input type="text" id="agriFarmLieu" placeholder="Ex: Bir El Djir" />
+        </div>
+
+        <div class="agri-form-group">
+          <label>Commune</label>
+          <input type="text" id="agriFarmCommune" placeholder="Ex: Es Senia" />
+        </div>
+      </div>
+
+      <div class="agri-form-group">
+        <label>Adresse</label>
+        <input type="text" id="agriFarmAdresse" placeholder="Ex: Route de Sidi Chahmi" />
+      </div>
+
+      <div class="agri-double-fields">
+        <div class="agri-form-group">
+          <label>Culture principale</label>
+          <input type="text" id="agriFarmCulture" placeholder="Ex: Tomates" />
+        </div>
+
+        <div class="agri-form-group">
+          <label>Superficie (ha)</label>
+          <input type="text" id="agriFarmArea" placeholder="Ex: 12" />
+        </div>
+      </div>
+
+      <div class="agri-double-fields">
+        <div class="agri-form-group">
+          <label>Latitude</label>
+          <input type="number" step="any" id="agriFarmLat" placeholder="35.698" />
+        </div>
+
+        <div class="agri-form-group">
+          <label>Longitude</label>
+          <input type="number" step="any" id="agriFarmLng" placeholder="-0.634" />
+        </div>
+      </div>
+
+      <button class="agri-save-main-btn" id="agriSaveFarmBtn">Enregistrer la ferme</button>
+    </div>
+  </div>
+
+
+      <!-- ═══════════════════════════════════════════════════════
+           PAGE : AIDE CHEZ L'AGRICULTEUR
+      ════════════════════════════════════════════════════════ -->
+
+      <!-- MODAL — PRENDRE UN RENDEZ-VOUS VÉTÉRINAIRE -->
+      <div class="aide-modal-overlay" id="aideRdvModal">
+        <div class="aide-modal-box">
+          <div class="aide-modal-head">
+            <div>
+              <h3>📅 Demande de rendez-vous vétérinaire</h3>
+              <p id="aideRdvModalVetNom" style="color:var(--agri-green);font-weight:700;margin-top:4px;">Sélectionnez un vétérinaire</p>
+            </div>
+            <button class="aide-modal-close" onclick="aideFermerRdvModal()">✖</button>
+          </div>
+          <input type="hidden" id="aideRdvVetId" value="" />
+          <div class="aide-form-grid">
+            <div class="aide-field full">
+              <label>Choisir un vétérinaire</label>
+              <select id="aideRdvVetSelect">
+                <option value="">Chargement...</option>
+              </select>
+            </div>
+            <div class="aide-field">
+              <label>Type de visite</label>
+              <select id="aideRdvType">
+                <option value="consultation">Consultation</option>
+                <option value="vaccination">Vaccination</option>
+                <option value="urgence">Urgence</option>
+                <option value="suivi">Suivi</option>
+                <option value="chirurgie">Chirurgie</option>
+              </select>
+            </div>
+            <div class="aide-field">
+              <label>Wilaya</label>
+              <select id="aideRdvWilaya">
+                <option value="01">01 — Adrar</option>
+                <option value="02">02 — Chlef</option>
+                <option value="03">03 — Laghouat</option>
+                <option value="04">04 — Oum El Bouaghi</option>
+                <option value="05">05 — Batna</option>
+                <option value="06">06 — Béjaïa</option>
+                <option value="07">07 — Biskra</option>
+                <option value="08">08 — Béchar</option>
+                <option value="09" selected>09 — Blida</option>
+                <option value="10">10 — Bouïra</option>
+                <option value="11">11 — Tamanrasset</option>
+                <option value="12">12 — Tébessa</option>
+                <option value="13">13 — Tlemcen</option>
+                <option value="14">14 — Tiaret</option>
+                <option value="15">15 — Tizi Ouzou</option>
+                <option value="16">16 — Alger</option>
+                <option value="17">17 — Djelfa</option>
+                <option value="18">18 — Jijel</option>
+                <option value="19">19 — Sétif</option>
+                <option value="20">20 — Saïda</option>
+                <option value="21">21 — Skikda</option>
+                <option value="22">22 — Sidi Bel Abbès</option>
+                <option value="23">23 — Annaba</option>
+                <option value="24">24 — Guelma</option>
+                <option value="25">25 — Constantine</option>
+                <option value="26">26 — Médéa</option>
+                <option value="27">27 — Mostaganem</option>
+                <option value="28">28 — M'Sila</option>
+                <option value="29">29 — Mascara</option>
+                <option value="30">30 — Ouargla</option>
+                <option value="31">31 — Oran</option>
+                <option value="32">32 — El Bayadh</option>
+                <option value="33">33 — Illizi</option>
+                <option value="34">34 — Bordj Bou Arréridj</option>
+                <option value="35">35 — Boumerdès</option>
+                <option value="36">36 — El Tarf</option>
+                <option value="37">37 — Tindouf</option>
+                <option value="38">38 — Tissemsilt</option>
+                <option value="39">39 — El Oued</option>
+                <option value="40">40 — Khenchela</option>
+                <option value="41">41 — Souk Ahras</option>
+                <option value="42">42 — Tipaza</option>
+                <option value="43">43 — Mila</option>
+                <option value="44">44 — Aïn Defla</option>
+                <option value="45">45 — Naâma</option>
+                <option value="46">46 — Aïn Témouchent</option>
+                <option value="47">47 — Ghardaïa</option>
+                <option value="48">48 — Relizane</option>
+                <option value="49">49 — El M'Ghair</option>
+                <option value="50">50 — El Meniaa</option>
+                <option value="51">51 — Ouled Djellal</option>
+                <option value="52">52 — Bordj Baji Mokhtar</option>
+                <option value="53">53 — Béni Abbès</option>
+                <option value="54">54 — Timimoun</option>
+                <option value="55">55 — Touggourt</option>
+                <option value="56">56 — Djanet</option>
+                <option value="57">57 — In Salah</option>
+                <option value="58">58 — In Guezzam</option>
+              </select>
+            </div>
+            <div class="aide-field">
+              <label>Date souhaitée</label>
+              <input type="date" id="aideRdvDate" min="{{ today|default:'' }}" />
+            </div>
+            <div class="aide-field">
+              <label>Heure</label>
+              <input type="time" id="aideRdvHeure" value="09:00" />
+            </div>
+          
+            <div class="aide-field">
+              <label>Animaux concernés</label>
+              <input type="text" id="aideRdvAnimaux" placeholder="Ex: Bovins, Ovins..." />
+            </div>
+            <div class="aide-field">
+              <label>Nombre d'animaux</label>
+              <input type="number" id="aideRdvNbAnimaux" value="1" min="1" />
+            </div>
+            <div class="aide-field full">
+              <label>Description du problème</label>
+              <textarea id="aideRdvDesc" rows="3" placeholder="Décrivez les symptômes ou la raison de la visite..."></textarea>
+            </div>
+          </div>
+          <div class="aide-modal-actions">
+            <button class="agri-btn agri-btn-light" onclick="aideFermerRdvModal()">Annuler</button>
+            <button class="agri-btn agri-btn-primary" id="aideRdvSendBtn" onclick="aideSoumettreRdv()">✅ Envoyer la demande</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ PAGE NOTIFICATIONS (désactivée) ═══════════ -->
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="{% static 'js/profile-common.js' %}"></script>
+  <script src="{% static 'js/agriculteur.js' %}"></script>
+  <script src="{% static 'js/benefits-agriculteur.js' %}"></script>
+  <script src="{% static 'js/aide-agriculteur.js' %}"></script>
+<script src="{% static 'js/agrigov-chatbot.js' %}"></script>
+<script src="{% static 'js/pwa-register.js' %}"></script>
+<div class="mob-sidebar-overlay" id="agriMobOverlay" onclick="closeAgriSidebar()"></div>
+<script>
+function toggleAgriSidebar(){
+  if(window.innerWidth > 768) {
+    document.querySelector('.agri-sidebar')?.classList.toggle('mob-open');
+    document.getElementById('agriMobOverlay')?.classList.toggle('show');
+  }
+}
+function closeAgriSidebar(){
+  document.querySelector('.agri-sidebar')?.classList.remove('mob-open');
+  document.getElementById('agriMobOverlay')?.classList.remove('show');
+}
+</script>
+
+<!-- ═══ MOBILE BOTTOM NAV — AGRICULTEUR ═══ -->
+<nav class="m-bottom-nav m-bottom-nav-scroll" id="mBottomNav">
+  <button class="m-nav-tab active" id="mTab-agriDashboardPage" onclick="mAgriTo('agriDashboardPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Accueil</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-agriProductsPage" onclick="mAgriTo('agriProductsPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M7 10l2 2 6-6"/></svg>
+    <span>Produits</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-agriOrdersPage" onclick="mAgriTo('agriOrdersPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+    <span>Commandes</span>
+  </button>
+  <div class="m-nav-fab-wrap" onclick="mAgriTo('agriProductsPage')">
+    <button class="m-nav-fab"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" width="26" height="26"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <span class="m-nav-fab-label">Ajouter</span>
+  </div>
+  <button class="m-nav-tab" id="mTab-agriAdvantagesPage" onclick="mAgriTo('agriAdvantagesPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <span>Soutien</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-agriFarmsPage" onclick="mAgriTo('agriFarmsPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+    <span>Fermes</span>
+  </button>
+  <button class="m-nav-tab" id="mTab-agriAidePage" onclick="mAgriTo('agriAidePage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a9 9 0 1018 0 9 9 0 00-18 0"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>Aide Vét.</span>
+  </button>
+
+
+  <button class="m-nav-tab" id="mTab-agriProfilePage" onclick="mAgriTo('agriProfilePage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Profil</span>
+  </button>
+</nav>
+<script>
+function mAgriTo(pageId) {
+  document.querySelectorAll('.agri-page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById(pageId);
+  if(page) { page.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+  document.querySelectorAll('.m-nav-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('mTab-' + pageId);
+  if(tab) { tab.classList.add('active'); tab.scrollIntoView({inline:'center',behavior:'smooth'}); }
+  // Charger les données de la page Aide (mobile)
+  if(pageId === 'agriAidePage') {
+    if(typeof aideLoadVets === 'function')           aideLoadVets();
+    if(typeof aideLoadMesRdvs === 'function')        aideLoadMesRdvs();
+    if(typeof aideLoadVetTournees === 'function')    aideLoadVetTournees();
+    if(typeof aidePopulateVetSelect === 'function')  aidePopulateVetSelect();
+  }
+}
+document.querySelectorAll('.agri-nav-link').forEach(function(link){
+  link.addEventListener('click', function(){
+    const pid = this.getAttribute('data-page');
+    if(pid) { document.querySelectorAll('.m-nav-tab').forEach(t=>t.classList.remove('active'));
+      const t=document.getElementById('mTab-'+pid); if(t){t.classList.add('active');t.scrollIntoView({inline:'center',behavior:'smooth'});} }
+  });
+});
+</script>
+
+</body>
+</html>

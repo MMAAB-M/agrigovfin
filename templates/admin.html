@@ -1,0 +1,1253 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriGov - Admin Panel</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=50">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    .admin-page { display: none; }
+    .admin-page.active { display: block; }
+  </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+<!-- PWA Mobile -->
+<meta name="theme-color" content="#2d7a2d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AgriGov">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
+<link rel="stylesheet" href="{% static 'css/pwa-mobile.css' %}">
+</head>
+<body class="admin-premium-ui">
+
+  <div class="admin-app">
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="admin-logo-row">
+        <div class="admin-logo-box" style="margin-bottom:0;flex:1;">
+          <div class="admin-logo-circle">🌿</div>
+          <div>
+            <h2>AgriGov</h2>
+            <p>Admin Panel</p>
+          </div>
+        </div>
+        <button class="admin-sidebar-close-btn" onclick="closeAdminSidebar()" title="Fermer le menu">&#10005;</button>
+      </div>
+
+      <nav class="admin-menu">
+        <a href="#adminDashboardPage" class="admin-menu-link active" data-page="adminDashboardPage">
+          <span>📊</span> Tableau de bord
+        </a>
+        <a href="#adminProductsPage" class="admin-menu-link" data-page="adminProductsPage">
+          <span>📦</span> Gestion des Produits
+        </a>
+        <a href="#adminOrdersPage" class="admin-menu-link" data-page="adminOrdersPage">
+          <span>🧾</span> Gestion des Commandes
+        </a>
+        <a href="#adminUsersPage" class="admin-menu-link" data-page="adminUsersPage">
+          <span>👥</span> Gestion des Utilisateurs
+        </a>
+        <a href="#adminBenefitsPage" class="admin-menu-link" data-page="adminBenefitsPage">
+          <span>🎁</span> Gestion du soutien agricole
+        </a>
+        <a href="#adminVetOrgPage" class="admin-menu-link" data-page="adminVetOrgPage">
+          <span>🐾</span> Vétérinaire &amp; Organisation
+        </a>
+        <a href="#adminProfilPage" class="admin-menu-link" data-page="adminProfilPage">
+          <span>👤</span> Mon Profil
+        </a>
+      </nav>
+
+      <div style="margin-top:auto;padding-top:16px;flex-shrink:0;">
+        <a href="{% url 'logout' %}" class="m-desktop-only" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:rgba(255,100,100,0.12);color:#e05555;font-weight:600;text-decoration:none;">
+          <span>🚪</span> Déconnexion
+        </a>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+
+      <section class="admin-page active" id="adminDashboardPage">
+        <header class="admin-topbar">
+          <button class="admin-mob-toggle" onclick="toggleAdminSidebar()" title="Menu">☰</button>
+          <div>
+            <h1>Tableau De Bord</h1>
+            <p>Pilotage dynamique du marché agricole en temps réel</p>
+          </div>
+
+          <div class="admin-topbar-actions">
+            <div class="admin-search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" id="adminDashboardGlobalSearch" placeholder="Recherche globale intelligente..." />
+            </div>
+
+            <button class="admin-icon-btn admin-notification-btn" title="Notifications" type="button">
+              <i class="fas fa-bell"></i><span class="admin-notification-badge" hidden>0</span>
+            </button>
+
+            <button class="admin-icon-btn admin-theme-toggle" title="Dark mode">
+              <i class="fas fa-moon"></i>
+            </button>
+
+            <div class="admin-profile-box">
+              <img src="{% static 'images/admin-avatar.svg' %}" alt="admin">
+              <div>
+                <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+                <small>Ministère</small>
+              </div>
+            </div>
+          </div>
+        </header>
+
+
+        <section class="admin-stats-grid admin-kpi-grid" aria-label="Indicateurs rapides du tableau de bord admin">
+          <div class="admin-stat-card admin-kpi-card products admin-kpi-link" data-kpi="products" data-admin-go="adminProductsPage" role="button" tabindex="0" aria-label="Voir tous les produits">
+            <div class="admin-kpi-top">
+              <div class="admin-stat-icon products" aria-hidden="true"><i class="fas fa-box-open"></i></div>
+              <span class="admin-trend-chip up" id="adminTotalProductsTrend">↗ Live</span>
+            </div>
+            <h4>Total produits</h4>
+            <p id="adminTotalProductsValue">0</p>
+            <small id="adminTotalProductsSub">Produits officiels + annonces publiées</small>
+            <div class="admin-sparkline purple" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+          </div>
+
+          <div class="admin-stat-card admin-kpi-card orders admin-kpi-link" data-kpi="orders" data-admin-go="adminOrdersPage" role="button" tabindex="0" aria-label="Voir toutes les commandes">
+            <div class="admin-kpi-top">
+              <div class="admin-stat-icon orders" aria-hidden="true"><i class="fas fa-receipt"></i></div>
+              <span class="admin-trend-chip up" id="adminTotalOrdersTrend">↗ Live</span>
+            </div>
+            <h4>Total commandes</h4>
+            <p id="adminDashboardOrdersValue">0</p>
+            <small id="adminDashboardOrdersSub">Commandes créées sur la plateforme</small>
+            <div class="admin-sparkline blue" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+          </div>
+
+          <div class="admin-stat-card admin-kpi-card success admin-kpi-link" data-kpi="success" data-admin-go="adminOrdersPage" role="button" tabindex="0" aria-label="Voir les transactions réussies">
+            <div class="admin-kpi-top">
+              <div class="admin-stat-icon success" aria-hidden="true"><i class="fas fa-circle-check"></i></div>
+              <span class="admin-trend-chip up" id="adminSuccessTransactionsTrend">Validées</span>
+            </div>
+            <h4>Transactions réussies</h4>
+            <p id="adminSuccessTransactionsValue">0</p>
+            <small id="adminSuccessTransactionsSub">Commandes confirmées, expédiées ou livrées</small>
+            <div class="admin-sparkline green" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+          </div>
+
+          <div class="admin-stat-card admin-kpi-card low-product admin-kpi-link" data-kpi="lowProduct" data-admin-go="adminProductsPage" role="button" tabindex="0" aria-label="Voir le produit le moins vendu">
+            <div class="admin-kpi-top">
+              <div class="admin-stat-icon low-product" aria-hidden="true"><i class="fas fa-arrow-trend-down"></i></div>
+              <span class="admin-trend-chip danger" id="adminLowProductTrend">À surveiller</span>
+            </div>
+            <h4>Produit moins vendu</h4>
+            <p id="adminLowProductValue">—</p>
+            <small id="adminLowProductSub">Aucune vente détectée pour le moment</small>
+            <div class="admin-low-product-actions" aria-hidden="true">
+              <span>Voir produit</span>
+              <i class="fas fa-arrow-right"></i>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-grid three-charts admin-analytics-grid compact-charts" aria-label="Analyses visuelles principales">
+          <div class="admin-panel admin-chart-card top-products-card" tabindex="0" aria-describedby="chartTopProductsUnit">
+            <div class="admin-panel-header">
+              <div>
+                <h3>Top produits vendus</h3>
+                <p>Les produits qui génèrent le plus de commandes.</p>
+              </div>
+              <span class="admin-chart-badge success">Unités</span>
+            </div>
+            <div class="admin-chart-wrap">
+              <canvas id="adminTopProductsChart" role="img" aria-label="Graphique des produits les plus vendus"></canvas>
+            </div>
+            <p class="admin-chart-unit" id="chartTopProductsUnit">Unité: quantité vendue</p>
+          </div>
+
+          <div class="admin-panel admin-chart-card region-orders-card" tabindex="0" aria-describedby="chartRegionOrdersUnit">
+            <div class="admin-panel-header">
+              <div>
+                <h3>Commandes par région</h3>
+                <p>Répartition dynamique des commandes par région.</p>
+              </div>
+              <span class="admin-chart-badge info">Commandes</span>
+            </div>
+            <div class="admin-chart-wrap">
+              <canvas id="adminRegionOrdersChart" role="img" aria-label="Graphique des commandes par région"></canvas>
+            </div>
+            <p class="admin-chart-unit" id="chartRegionOrdersUnit">Unité: commandes</p>
+          </div>
+          <div class="admin-panel admin-chart-card stock-card" tabindex="0" aria-describedby="chartLowStockUnit">
+            <div class="admin-panel-header">
+              <div>
+                <h3>Stock faible</h3>
+                <p>Produits à réapprovisionner en priorité.</p>
+              </div>
+              <span class="admin-chart-badge warning">Stock</span>
+            </div>
+            <div class="admin-chart-wrap small">
+              <canvas id="adminLowStockChart" role="img" aria-label="Graphique des produits avec stock faible"></canvas>
+            </div>
+            <p class="admin-chart-unit" id="chartLowStockUnit">Unité: stock restant</p>
+          </div>
+
+          <div class="admin-panel admin-chart-card users-card" tabindex="0" aria-describedby="chartUsersUnit">
+            <div class="admin-panel-header">
+              <div>
+                <h3>Cercle des utilisateurs</h3>
+                <p>Admin · Acheteur · Agriculteur · Transporteur · Autre</p>
+              </div>
+              <span class="admin-chart-badge violet">Comptes</span>
+            </div>
+            <div class="admin-chart-wrap small">
+              <canvas id="adminUsersCircleChart" role="img" aria-label="Graphique circulaire des rôles utilisateurs"></canvas>
+            </div>
+            <p class="admin-chart-unit" id="chartUsersUnit">Unité: comptes utilisateurs</p>
+          </div>
+
+          <div class="admin-panel admin-chart-card transaction-card" tabindex="0" aria-describedby="chartTransactionsUnit">
+            <div class="admin-panel-header">
+              <div>
+                <h3>Transactions réussies vs échouées</h3>
+                <p>Monitoring rapide du paiement et des commandes.</p>
+              </div>
+              <span class="admin-chart-badge success">Statuts</span>
+            </div>
+            <div class="admin-chart-wrap small">
+              <canvas id="adminTransactionsChart" role="img" aria-label="Graphique des transactions réussies et échouées"></canvas>
+            </div>
+            <p class="admin-chart-unit" id="chartTransactionsUnit">Unité: transactions</p>
+          </div>
+          <div class="admin-panel admin-chart-card weak-products-card" tabindex="0" aria-describedby="chartWeakProductsUnit">
+            <div class="admin-panel-header">
+              <div>
+                <h3>Produits moins vendus</h3>
+                <p>À pousser avec promotion, mise en avant ou réduction.</p>
+              </div>
+              <span class="admin-chart-badge danger">Ventes</span>
+            </div>
+            <div class="admin-chart-wrap">
+              <canvas id="adminLeastProductsChart" role="img" aria-label="Graphique des produits les moins vendus"></canvas>
+            </div>
+            <p class="admin-chart-unit" id="chartWeakProductsUnit">Unité: quantité vendue</p>
+          </div>
+        </section>
+
+        <section class="admin-grid two-columns">
+          <div class="admin-panel">
+            <div class="admin-panel-header">
+              <h3>Commandes récentes</h3>
+              <a href="#" data-admin-go="adminOrdersPage">Voir tout</a>
+            </div>
+
+            <div class="admin-table-wrapper">
+              <table class="admin-pro-table admin-validation-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Client</th>
+                    <th>Statut</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="4"><div class="admin-empty-state compact">Chargement dynamique des commandes...</div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="admin-panel">
+            <div class="admin-panel-header">
+              <h3>Produits populaires</h3>
+              <a href="#" data-admin-go="adminProductsPage">Voir tout</a>
+            </div>
+
+            <div class="admin-products-grid">
+              <div class="admin-empty-state">Chargement dynamique des produits populaires...</div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="admin-page" id="adminProductsPage">
+        <header class="admin-topbar">
+          <button class="admin-mob-toggle" onclick="toggleAdminSidebar()" title="Menu">&#9776;</button>
+          <div>
+            <h1>Gestion des Produits</h1>
+            <p>Supervision des produits, prix officiels et conformité du marché</p>
+          </div>
+
+          <div class="admin-topbar-actions">
+            <div class="admin-search-box">
+              <span>🔎</span>
+              <input type="text" id="adminGlobalProductSearch" placeholder="Produit, vendeur, wilaya, statut..." />
+            </div>
+
+            <button class="admin-icon-btn admin-notification-btn" title="Notifications" type="button">🔔<span class="admin-notification-badge" hidden>0</span></button>
+            <button class="admin-icon-btn admin-theme-toggle">🌙</button>
+
+            <div class="admin-profile-box">
+              <img src="{% static 'images/admin-avatar.svg' %}" alt="admin">
+              <div>
+                <h4>{{ request.user.get_full_name|default:request.user.username }}</h4>
+                <p>Ministère</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="admin-cards">
+          <div class="admin-card">
+            <span>Total Produits</span>
+            <h2 id="adminTotalProducts">0</h2>
+            <small>Catalogue total</small>
+          </div>
+
+          <div class="admin-card">
+            <span>En Stock</span>
+            <h2 id="adminInStock">0</h2>
+            <small>Disponibles</small>
+          </div>
+
+          <div class="admin-card">
+            <span>Non Conformes</span>
+            <h2 id="adminNonConformeCount">0</h2>
+            <small>Prix hors plage</small>
+          </div>
+
+          <div class="admin-card">
+            <span>Top Produit</span>
+            <h2 id="adminTopSale">--</h2>
+            <small>Meilleure quantité</small>
+          </div>
+        </section>
+
+        <section class="admin-grid two-columns admin-product-charts admin-product-charts-top" aria-label="Graphiques produits principaux">
+          <div class="admin-panel admin-chart-card compact-chart-card">
+            <div class="admin-panel-header">
+              <div>
+                <h3>Produits par type</h3>
+                <p>Répartition dynamique du catalogue</p>
+              </div>
+            </div>
+            <canvas id="adminDonutChart" aria-label="Graphique circulaire des produits par type"></canvas>
+          </div>
+
+          <div class="admin-panel admin-chart-card compact-chart-card">
+            <div class="admin-panel-header">
+              <div>
+                <h3>Produits les plus disponibles</h3>
+                <p>Quantité disponible par produit</p>
+              </div>
+            </div>
+            <canvas id="adminBarChart" aria-label="Graphique en barres des produits les plus disponibles"></canvas>
+          </div>
+        </section>
+
+        <section class="admin-products-content-grid admin-products-with-catalogue" aria-label="Gestion produits et catalogues">
+        <section class="admin-product-main-card admin-product-main-full" aria-label="Tableau de gestion des produits">
+          <div class="admin-toolbar admin-product-toolbar">
+            <div class="admin-toolbar-left">
+              <input type="text" id="adminSearchTableProduct" placeholder="Rechercher un produit, vendeur ou statut..." aria-label="Rechercher dans les produits" />
+              <select id="adminFilterType" aria-label="Filtrer par type de produit">
+                <option value="all">Tous types</option><option value="Legume">Légume</option><option value="Fruit">Fruit</option><option value="Animal">Animal</option><option value="Cereale">Céréale</option>
+              </select>
+              <select id="adminFilterStatusProduct" aria-label="Filtrer par statut produit">
+                <option value="all">Tous statuts</option><option value="Officiel">Officiel</option><option value="Disponible">Disponible</option><option value="Stock faible">Stock faible</option><option value="Rupture">Rupture</option>
+              </select>
+              <select id="adminFilterWilayaProduct" aria-label="Filtrer par wilaya"><option value="all">Toutes wilayas</option></select>
+            </div>
+            <div class="admin-toolbar-right">
+              <button type="button" class="admin-btn secondary-btn" id="adminAddCatalogueBtn">+ Catalogue</button>
+              <button type="button" class="admin-btn primary-btn" id="adminAddProductBtn">+ Ajouter Produit</button>
+            </div>
+          </div>
+          <div class="admin-table-wrapper admin-product-table-pro">
+            <table id="adminProductTable">
+              <thead><tr><th>ID</th><th>Nom</th><th>Type</th><th>Qté</th><th>Status</th><th>Prix</th><th>Officiel Min</th><th>Officiel Max</th><th>Actions</th></tr></thead>
+              <tbody id="adminProductTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="admin-catalogue-aside admin-catalogue-right" aria-label="Catalogues produits">
+          <div class="admin-panel-header catalogue-header-pro">
+            <div><h3>Catalogues</h3><p>Organisation dynamique des familles de produits</p></div>
+            <button type="button" class="admin-btn secondary-btn catalogue-new-btn" id="adminAddCatalogueAsideBtn" aria-label="Ajouter un catalogue">+ Nouveau</button>
+          </div>
+          <div class="admin-table-wrapper admin-catalogue-wrapper">
+            <table class="admin-pro-table admin-validation-table">
+              <thead><tr><th>Catalogue</th><th>Produits</th><th>Actions</th></tr></thead>
+              <tbody id="adminCatalogTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+        </section>
+
+
+        <section class="admin-panel" style="margin-top:20px;">
+          <div class="admin-panel-header">
+            <h3>Produits des agriculteurs</h3>
+            <p style="color:var(--admin-muted,#6b7280);margin:0;">Annonces publiées par les agriculteurs</p>
+          </div>
+          <div class="admin-table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Produit</th>
+                  <th>Agriculteur</th>
+                  <th>Catégorie</th>
+                  <th>Wilaya</th>
+                  <th>Qté</th>
+                  <th>Statut</th>
+                  <th>Prix</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminFarmerProductsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="admin-page admin-orders-pro-page" id="adminOrdersPage">
+        <header class="admin-topbar admin-orders-topbar">
+          <button class="admin-mob-toggle" onclick="toggleAdminSidebar()" title="Menu">&#9776;</button>
+          <div>
+            <h1>Gestion des Commandes</h1>
+            <p>Tableau complet des commandes avec liaison acheteur, agriculteur et transporteur.</p>
+          </div>
+          <div class="admin-topbar-actions">
+          <div class="admin-topbar-actions">
+            <div class="admin-search-box admin-orders-global-search">
+              <span>🔎</span>
+              <input type="text" id="adminOrdersSearchInput" placeholder="Commande, acheteur, agriculteur, statut..." aria-label="Rechercher une commande" />
+            </div>
+            <button class="admin-icon-btn admin-theme-toggle" type="button" aria-label="Changer le thème">🌙</button>
+            <button class="admin-icon-btn" id="adminOrdersPrintBtn" type="button" aria-label="Imprimer la liste des commandes">🖨️</button>
+
+            <div class="admin-profile-box"><img src="{% static 'images/admin-avatar.svg' %}" alt=""><div><h4>{{ request.user.get_full_name|default:request.user.username }}</h4><p>Ministère</p></div></div>
+          </div>
+        </header>
+        <section class="admin-stats-grid four-cols admin-orders-kpis" aria-label="Indicateurs commandes">
+          <div class="admin-stat-card orders-mini-card"><span>Total commandes</span><h2 id="adminTotalOrdersCount">0</h2><small>Toutes les commandes</small></div>
+          <div class="admin-stat-card orders-mini-card success"><span>Validées</span><h2 id="adminSuccessRate">0%</h2><small>Confirmées / livrées</small></div>
+          <div class="admin-stat-card orders-mini-card warning"><span>À traiter</span><h2 id="adminPendingOrdersCount">0</h2><small>En attente ou préparation</small></div>
+          <div class="admin-stat-card orders-mini-card danger"><span>Alertes</span><h2 id="adminLateOrdersCount">0</h2><small>Refusées / annulées</small></div>
+        </section>
+        <section class="admin-orders-insights-row" aria-label="Graphiques commandes">
+          <article class="admin-panel admin-order-chart-card"><div class="admin-panel-header compact"><h3>Statut des commandes</h3><p>Répartition actuelle</p></div><canvas id="adminOrdersStatusChart" role="img" aria-label="Graphique des commandes par statut"></canvas></article>
+          <article class="admin-panel admin-order-chart-card"><div class="admin-panel-header compact"><h3>Flux livraison</h3><p>À traiter, expédiées, livrées</p></div><canvas id="adminWeeklyDeliveriesChart" role="img" aria-label="Graphique du flux de livraison"></canvas></article>
+          <article class="admin-panel admin-order-chart-card admin-order-help-card"><h3>Popup commande</h3><p>Cliquer sur une ligne pour afficher les cartes liées: acheteur, agriculteur, transporteur et produits.</p><span>Accessible clavier: Tab + Entrée</span></article>
+        </section>
+        <section class="admin-panel admin-orders-table-panel">
+          <div class="admin-panel-header admin-orders-table-header"><div><h3>Tableau des commandes</h3><p>Chaque ligne ouvre une vue détaillée de la commande.</p></div><div class="admin-filters admin-orders-filters" aria-label="Filtres commandes"><select id="adminStatusFilter" aria-label="Filtrer par statut"><option value="all">Tous statuts</option><option value="pending">En attente</option><option value="in transit">En livraison</option><option value="delivered">Livré</option></select><select id="adminRegionFilter" aria-label="Filtrer par région"><option value="all">Toutes régions</option></select></div></div>
+          <div class="admin-table-wrapper admin-orders-table-wrapper"><table class="admin-orders-table"><thead><tr><th>ID</th><th>Acheteur</th><th>Agriculteur</th><th>Transporteur</th><th>Produits</th><th>Région</th><th>Statut</th><th>Total</th><th>Détails</th></tr></thead><tbody id="adminOrdersTable"></tbody></table></div>
+        </section>
+        <section class="admin-orders-bottom-grid"><div class="admin-panel"><h3>Alertes dynamiques</h3><div id="adminDynamicAlerts"><div class="admin-empty-state compact">Aucune alerte pour le moment.</div></div></div><div class="admin-panel"><h3>Top agriculteurs</h3><ul id="adminTopFarmersList"><li>Chargement dynamique...</li></ul></div></section>
+      </section>
+
+      <section class="admin-page" id="adminUsersPage">
+        <header class="admin-topbar">
+          <button class="admin-mob-toggle" onclick="toggleAdminSidebar()" title="Menu">&#9776;</button>
+          <div>
+            <h1>Gestion des Utilisateurs</h1>
+            <p>Validation, suivi et gestion des comptes</p>
+          </div>
+
+          <div class="admin-topbar-actions">
+            <button class="admin-icon-btn admin-theme-toggle">🌙</button>
+            <button class="admin-icon-btn admin-notification-btn" title="Notifications" type="button">🔔<span class="admin-notification-badge" hidden>0</span></button>
+            <div class="admin-admin-box">Admin</div>
+          </div>
+        </header>
+
+        {% if messages %}
+          {% for message in messages %}
+            <p style="margin:10px 0;color:green;">{{ message }}</p>
+          {% endfor %}
+        {% endif %}
+
+        <section class="admin-stats-grid four-cols">
+          <div class="admin-stat-card blue">
+            <span>Total Utilisateurs validés</span>
+            <h3 id="adminUsersApprovedCount">{{ approved_users|length }}</h3>
+          </div>
+          <div class="admin-stat-card green">
+            <span>Actifs</span>
+            <h3 id="adminUsersActiveCount">{{ approved_users|length }}</h3>
+          </div>
+          <div class="admin-stat-card orange">
+            <span>En attente</span>
+            <h3 id="adminUsersPendingCount">{{ pending_users|length }}</h3>
+          </div>
+          <div class="admin-stat-card red">
+            <span>Refusés</span>
+            <h3 id="adminUsersRejectedCount" data-total="{{ rejected_users|length }}">{{ rejected_users|length }}</h3>
+          </div>
+        </section>
+
+
+
+        <section class="admin-users-charts-grid" aria-label="Graphiques utilisateurs">
+          <article class="admin-panel admin-user-chart-card role-chart" tabindex="0" aria-describedby="adminUsersRolesDesc">
+            <div class="admin-panel-header compact"><div><h3>Utilisateurs par rôle</h3><p id="adminUsersRolesDesc">Répartition: admin, acheteur, agriculteur, transporteur et autres.</p></div><span class="admin-chart-badge violet">Rôles</span></div>
+            <div class="admin-chart-wrap user-chart-wrap"><canvas id="adminUsersRolesChart" role="img" aria-label="Graphique donut des utilisateurs par rôle"></canvas></div>
+          </article>
+          <article class="admin-panel admin-user-chart-card status-chart" tabindex="0" aria-describedby="adminUsersStatusDesc">
+            <div class="admin-panel-header compact"><div><h3>Statut des comptes</h3><p id="adminUsersStatusDesc">Comptes validés, en attente et refusés.</p></div><span class="admin-chart-badge success">Statut</span></div>
+            <div class="admin-chart-wrap user-chart-wrap"><canvas id="adminUsersStatusChart" role="img" aria-label="Graphique des statuts utilisateurs"></canvas></div>
+          </article>
+          <article class="admin-panel admin-user-chart-card docs-chart" tabindex="0" aria-describedby="adminUsersDocsDesc">
+            <div class="admin-panel-header compact"><div><h3>Documents visibles</h3><p id="adminUsersDocsDesc">Photos, certificats, registres et documents transporteur.</p></div><span class="admin-chart-badge info">Docs</span></div>
+            <div class="admin-chart-wrap user-chart-wrap"><canvas id="adminUsersDocsChart" role="img" aria-label="Graphique des documents utilisateurs visibles"></canvas></div>
+          </article>
+        </section>
+
+        <section class="admin-panel admin-users-toolbar">
+          <div class="admin-search-box">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="text" id="adminUsersSearchInput" placeholder="Recherche avancée: nom, email, rôle, wilaya...">
+          </div>
+          <select id="adminUsersRoleFilter">
+            <option value="all">Tous les rôles</option>
+            <option value="agriculteur">Agriculteur</option>
+            <option value="acheteur">Acheteur</option>
+            <option value="transporteur">Transporteur</option>
+            <option value="autres">Autres</option>
+          </select>
+          <select id="adminUsersStatusFilter">
+            <option value="all">Tous statuts</option>
+            <option value="pending">En attente</option>
+            <option value="approved">Validés</option>
+          </select>
+        </section>
+
+        <section class="admin-grid users-grid">
+          <div class="admin-panel">
+            <div class="admin-panel-header">
+              <h2>Validation des comptes</h2>
+              <span class="status-badge pending">{{ pending_users|length }} en attente</span>
+            </div>
+
+            <div class="admin-table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th>Rôle</th>
+                    <th>Fermes</th>
+                    <th>Téléphone</th>
+                    <th>Documents</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adminPendingUsersBody">
+                  {% for profile in pending_users %}
+                  <tr class="admin-user-row" data-user-id="{{ profile.id }}" data-user-email="{{ profile.user.email }}" data-status="pending" data-role="{{ profile.role }}">
+                    <td>{{ profile.id }}</td>
+                    <td>{{ profile.user.first_name }} {{ profile.user.last_name }}</td>
+                    <td>{{ profile.user.email }}</td>
+                    <td><span class="status-badge pending">{{ profile.role }}</span></td>
+                    <td>
+                      {% if profile.role == 'agriculteur' and profile.farms.all %}
+                        {% for farm in profile.farms.all %}
+                          <div style="margin-bottom:8px; line-height:1.35;">
+                            🌿 <strong>{{ farm.name }}</strong>{% if farm.surface %} ({{ farm.surface }} ha){% endif %}<br>
+                            <small style="color:#666;">{{ farm.wilaya|default:'Wilaya non renseignée' }}{% if farm.lieu %} · {{ farm.lieu }}{% endif %}{% if farm.culture %} · {{ farm.culture }}{% endif %}</small>
+                          </div>
+                        {% empty %}
+                          <span style="color:#888;">Aucune ferme</span>
+                        {% endfor %}
+                      {% else %}
+                        <span style="color:#888;">--</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ profile.phone }}</td>
+                    <td>
+                      <div class="admin-docs-cell">
+                        {% if profile.profile_photo %}
+                          <a class="admin-doc-chip photo" href="{{ profile.profile_photo.url }}" target="_blank" rel="noopener">Photo</a>
+                        {% endif %}
+
+                        {% if profile.certificate %}
+                          <a class="admin-doc-chip certificate" href="{{ profile.certificate.url }}" target="_blank" rel="noopener">Certificat</a>
+                        {% endif %}
+
+                        {% if profile.buyer_info.commercial_register %}
+                          <a class="admin-doc-chip register" href="{{ profile.buyer_info.commercial_register.url }}" target="_blank" rel="noopener">Registre</a>
+                        {% endif %}
+
+                        {% for doc in profile.transporter_info.documents.all %}
+                          <a class="admin-doc-chip vehicle" href="{{ doc.document.url }}" target="_blank" rel="noopener">Véhicule {{ forloop.counter }}</a>
+                        {% endfor %}
+                      </div>
+                    </td>
+                    <td class="admin-actions-cell">
+                      <form method="post" action="{% url 'approve_user' profile.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="admin-btn primary-btn">Valider</button>
+                      </form>
+                      <form method="post" action="{% url 'reject_user' profile.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="admin-btn gray-btn">Rejeter</button>
+                      </form>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="8"><div class="admin-empty-state compact">Aucun compte en attente.</div></td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="admin-panel">
+            <div class="admin-panel-header">
+              <h2>Utilisateurs validés</h2>
+              <span class="status-badge active">{{ approved_users|length }} validés</span>
+            </div>
+
+            <div class="admin-table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th>Rôle</th>
+                    <th>Fermes</th>
+                    <th>Documents</th>
+                    <th>Statut</th>
+                  </tr>
+                </thead>
+                <tbody id="adminApprovedUsersBody">
+                  {% for profile in approved_users %}
+                  <tr class="admin-user-row" data-user-id="{{ profile.id }}" data-user-email="{{ profile.user.email }}" data-status="approved" data-role="{{ profile.role }}">
+                    <td>{{ profile.id }}</td>
+                    <td>{{ profile.user.first_name }} {{ profile.user.last_name }}</td>
+                    <td>{{ profile.user.email }}</td>
+                    <td>{{ profile.role }}</td>
+                    <td>
+                      {% if profile.role == 'agriculteur' and profile.farms.all %}
+                        {% for farm in profile.farms.all %}
+                          <div style="margin-bottom:8px; line-height:1.35;">
+                            🌿 <strong>{{ farm.name }}</strong>{% if farm.surface %} ({{ farm.surface }} ha){% endif %}<br>
+                            <small style="color:#666;">{{ farm.wilaya|default:'Wilaya non renseignée' }}{% if farm.lieu %} · {{ farm.lieu }}{% endif %}{% if farm.culture %} · {{ farm.culture }}{% endif %}</small>
+                          </div>
+                        {% empty %}
+                          <span style="color:#888;">Aucune ferme</span>
+                        {% endfor %}
+                      {% else %}
+                        <span style="color:#888;">--</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <div class="admin-docs-cell">
+                        {% if profile.profile_photo %}
+                          <a class="admin-doc-chip photo" href="{{ profile.profile_photo.url }}" target="_blank" rel="noopener">Photo</a>
+                        {% endif %}
+
+                        {% if profile.certificate %}
+                          <a class="admin-doc-chip certificate" href="{{ profile.certificate.url }}" target="_blank" rel="noopener">Certificat</a>
+                        {% endif %}
+
+                        {% if profile.buyer_info.commercial_register %}
+                          <a class="admin-doc-chip register" href="{{ profile.buyer_info.commercial_register.url }}" target="_blank" rel="noopener">Registre</a>
+                        {% endif %}
+
+                        {% for doc in profile.transporter_info.documents.all %}
+                          <a class="admin-doc-chip vehicle" href="{{ doc.document.url }}" target="_blank" rel="noopener">Véhicule {{ forloop.counter }}</a>
+                        {% endfor %}
+                      </div>
+                    </td>
+                    <td><span class="status-badge active">Validé</span></td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="7"><div class="admin-empty-state compact">Aucun utilisateur validé.</div></td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </section>
+
+
+      <section class="admin-page" id="adminBenefitsPage">
+        <header class="admin-topbar">
+          <button class="admin-mob-toggle" onclick="toggleAdminSidebar()" title="Menu">&#9776;</button>
+          <div>
+            <h1>Gestion du soutien agricole</h1>
+            <p>Ajoutez les avantages agricoles et traitez les demandes des agriculteurs.</p>
+          </div>
+          <div class="admin-topbar-actions">
+            <button class="admin-btn primary-btn" id="adminOpenBenefitModalBtn" type="button">+ Ajouter un avantage</button>
+            <button class="admin-btn gray-btn" id="adminRefreshBenefitsBtn" type="button">Actualiser</button>
+          </div>
+        </header>
+
+        <section class="admin-benefit-stats">
+          <article class="admin-stat-card"><h4>Avantages actifs</h4><p id="adminBenefitsCount">0</p><small>Publiés pour les agriculteurs</small></article>
+          <article class="admin-stat-card"><h4>Demandes en attente</h4><p id="adminBenefitPendingCount">0</p><small>À traiter</small></article>
+          <article class="admin-stat-card"><h4>Demandes acceptées</h4><p id="adminBenefitAcceptedCount">0</p><small>Dossiers validés</small></article>
+          <article class="admin-stat-card"><h4>Demandes refusées</h4><p id="adminBenefitRejectedCount">0</p><small>Dossiers rejetés</small></article>
+        </section>
+
+        <section class="admin-grid two-columns admin-benefits-columns">
+          <div class="admin-panel">
+            <div class="admin-panel-header">
+              <h3>Avantages publiés</h3>
+              <span>Nom · photo · description · actions</span>
+            </div>
+            <div class="admin-benefit-list" id="adminBenefitsList">Chargement...</div>
+          </div>
+
+          <div class="admin-panel">
+            <div class="admin-panel-header">
+              <h3>Demandes des agriculteurs</h3>
+              <span>Accepter ou refuser les demandes</span>
+            </div>
+            <div class="admin-table-wrap">
+              <table class="admin-benefit-requests-table">
+                <thead><tr><th>Agriculteur</th><th>Avantage</th><th>Wilaya</th><th>Statut</th><th>Actions</th></tr></thead>
+                <tbody id="adminBenefitRequestsBody"><tr><td colspan="5">Aucune demande.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </section>
+
+
+      <!-- ═══════════════════════════════════════════════════════
+           PAGE VÉTÉRINAIRE & ORGANISATION
+           ═══════════════════════════════════════════════════════ -->
+      <section class="admin-page" id="adminVetOrgPage">
+        <header class="admin-topbar">
+          <button class="admin-mob-toggle" onclick="toggleAdminSidebar()" title="Menu">&#9776;</button>
+          <div>
+            <h1>🐾 Vétérinaire &amp; Organisation</h1>
+            <p>Suivi des tournées et rendez-vous — contrôle des causes de baisse de stock</p>
+          </div>
+          <div class="admin-topbar-actions">
+            <button class="admin-icon-btn admin-theme-toggle" type="button" title="Thème">🌙</button>
+            <div class="admin-profile-box">
+              <img src="{% static 'images/admin-avatar.svg' %}" alt="admin">
+              <div><strong>{{ request.user.get_full_name|default:request.user.username }}</strong><small>Ministère</small></div>
+            </div>
+          </div>
+        </header>
+
+        <!-- KPI Cards -->
+        <section class="admin-stats-grid four-cols" aria-label="Indicateurs Vét/Org">
+          <div class="admin-stat-card admin-kpi-card" style="border-left:4px solid #6366f1;">
+            <h4>Total Tournées</h4>
+            <p id="voTotalTournees" style="font-size:2rem;font-weight:800;margin:4px 0;">—</p>
+            <small>Toutes tournées enregistrées</small>
+          </div>
+          <div class="admin-stat-card admin-kpi-card" style="border-left:4px solid #22c55e;">
+            <h4>Tournées Actives</h4>
+            <p id="voTourneesActives" style="font-size:2rem;font-weight:800;margin:4px 0;color:#22c55e;">—</p>
+            <small>En cours actuellement</small>
+          </div>
+          <div class="admin-stat-card admin-kpi-card" style="border-left:4px solid #f59e0b;">
+            <h4>RDV En Attente</h4>
+            <p id="voRdvAttente" style="font-size:2rem;font-weight:800;margin:4px 0;color:#f59e0b;">—</p>
+            <small>Consultations non encore confirmées</small>
+          </div>
+          <div class="admin-stat-card admin-kpi-card" style="border-left:4px solid #ef4444;">
+            <h4>Alertes Actives</h4>
+            <p id="voAlertesActives" style="font-size:2rem;font-weight:800;margin:4px 0;color:#ef4444;">—</p>
+            <small>Alertes admin en cours</small>
+          </div>
+        </section>
+
+        <!-- Tabs -->
+        <div style="display:flex;gap:8px;margin:20px 0 12px;flex-wrap:wrap;">
+          <button class="admin-btn primary-btn vo-tab-btn active" data-tab="voTourneesTab">🗺️ Tournées</button>
+          <button class="admin-btn gray-btn vo-tab-btn" data-tab="voRdvTab">📅 Rendez-vous</button>
+          <button class="admin-btn gray-btn vo-tab-btn" data-tab="voAlertesTab">🔔 Alertes Envoyées</button>
+        </div>
+
+        <!-- Tab: Tournées -->
+        <section class="admin-panel vo-tab-content" id="voTourneesTab">
+          <div class="admin-panel-header">
+            <div><h3>Tournées Vétérinaires</h3><p>Calendrier des tournées publiées pour contrôle terrain</p></div>
+            <button class="admin-btn secondary-btn" id="voRefreshBtn" type="button">🔄 Actualiser</button>
+          </div>
+          <div class="admin-table-wrapper">
+            <table>
+              <thead><tr><th>Titre</th><th>Vétérinaire</th><th>Ville / Wilaya</th><th>Wilayas Tournée</th><th>Période</th><th>Statut</th><th>Alerte admin</th></tr></thead>
+              <tbody id="voTourneesBody"><tr><td colspan="8" style="text-align:center;padding:20px;color:#999">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+          <!-- Tournées Organisateurs -->
+          <div class="admin-panel-header" style="margin-top:28px;border-top:1px solid #e5e7eb;padding-top:20px;">
+            <div><h3>🌿 Tournées Organisateurs</h3><p>Tournées planifiées par les organisateurs suite aux alertes admin</p></div>
+          </div>
+          <div class="admin-table-wrapper">
+            <table>
+              <thead><tr><th>Nom de la tournée</th><th>Organisateur</th><th>Wilaya</th><th>Période</th><th>Description</th><th>Statut</th></tr></thead>
+              <tbody id="voOrgTourneesBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:#999">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Tab: RDV -->
+        <section class="admin-panel vo-tab-content" id="voRdvTab" style="display:none;">
+          <div class="admin-panel-header">
+            <div><h3>Rendez-vous Consultations</h3><p>Historique complet des RDV publiés par les vétérinaires</p></div>
+            <div style="display:flex;gap:8px;">
+              <select id="voRdvFilterStatut" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd;font-size:0.85rem;">
+                <option value="all">Tous statuts</option>
+                <option value="en_attente">En attente</option>
+                <option value="confirme">Confirmé</option>
+                <option value="termine">Terminé</option>
+                <option value="refuse">Refusé</option>
+                <option value="annule">Annulé</option>
+              </select>
+            </div>
+          </div>
+          <div class="admin-table-wrapper">
+            <table>
+              <thead><tr><th>ID</th><th>Vétérinaire</th><th>Agriculteur</th><th>Type</th><th>Date</th><th>Lieu / Wilaya</th><th>Animaux</th><th>Statut</th></tr></thead>
+              <tbody id="voRdvBody"><tr><td colspan="8" style="text-align:center;padding:20px;color:#999">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Tab: Alertes -->
+        <section class="admin-panel vo-tab-content" id="voAlertesTab" style="display:none;">
+          <div class="admin-panel-header">
+            <div><h3>Alertes Envoyées</h3><p>Alertes admin actives concernant les stocks et les tournées</p></div>
+          </div>
+          <div id="voAlertesGrid" style="display:grid;gap:12px;">
+            <div style="text-align:center;padding:20px;color:#999">Chargement...</div>
+          </div>
+        </section>
+      </section>
+
+      <!-- ══════════ MON PROFIL ══════════ -->
+      <section class="admin-page" id="adminProfilPage">
+        <header class="admin-topbar">
+          <button class="admin-mob-toggle" onclick="toggleAdminSidebar()" title="Menu">&#9776;</button>
+          <div>
+            <h1>Mon Profil</h1>
+            <p>Gérez vos informations personnelles et votre sécurité</p>
+          </div>
+        </header>
+        <div class="ap-layout">
+          <!-- Avatar card -->
+          <div class="ap-avatar-card">
+            <div class="ap-avatar-wrap">
+              <img id="apAvatarImg" src="{% static 'images/admin-avatar.svg' %}" alt="avatar" class="ap-avatar-img">
+              <button class="ap-avatar-btn" onclick="document.getElementById('apPhotoInput').click()" title="Changer la photo">📷</button>
+              <input type="file" id="apPhotoInput" accept="image/*" style="display:none">
+            </div>
+            <div class="ap-name" id="apDisplayName">{{ request.user.get_full_name|default:request.user.username }}</div>
+            <div class="ap-role">Administrateur · AgriGov</div>
+            <div style="margin-top:12px;font-size:.82rem;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;">{{ request.user.email }}</div>
+            <div style="margin-top:6px;font-size:.78rem;color:#9ca3af;">Compte depuis {{ request.user.date_joined|date:'d/m/Y' }}</div>
+          </div>
+          <!-- Forms card -->
+          <div class="ap-forms-card">
+            <div class="ap-tabs">
+              <button class="ap-tab active" data-panel="apPanelInfo">Informations</button>
+              <button class="ap-tab" data-panel="apPanelPassword">Sécurité</button>
+            </div>
+            <!-- Info panel -->
+            <div class="ap-panel active" id="apPanelInfo">
+              <div class="ap-form-grid">
+                <div class="ap-form-group">
+                  <label>Prénom</label>
+                  <input type="text" id="apFirstName" value="{{ request.user.first_name }}" placeholder="Votre prénom">
+                </div>
+                <div class="ap-form-group">
+                  <label>Nom</label>
+                  <input type="text" id="apLastName" value="{{ request.user.last_name }}" placeholder="Votre nom">
+                </div>
+                <div class="ap-form-group full">
+                  <label>Email</label>
+                  <input type="email" id="apEmail" value="{{ request.user.email }}" placeholder="email@agrigov.dz">
+                </div>
+              </div>
+              <button class="ap-save-btn" onclick="apSaveInfo()">💾 Enregistrer les informations</button>
+              <div class="ap-success" id="apInfoSuccess">✅ Informations mises à jour avec succès.</div>
+              <div class="ap-error" id="apInfoError"></div>
+            </div>
+            <!-- Password panel -->
+            <div class="ap-panel" id="apPanelPassword">
+              <div class="ap-form-grid">
+                <div class="ap-form-group full">
+                  <label>Mot de passe actuel</label>
+                  <input type="password" id="apCurrentPwd" placeholder="••••••••">
+                </div>
+                <div class="ap-form-group">
+                  <label>Nouveau mot de passe</label>
+                  <input type="password" id="apNewPwd" placeholder="Minimum 8 caractères">
+                </div>
+                <div class="ap-form-group">
+                  <label>Confirmer le nouveau mot de passe</label>
+                  <input type="password" id="apConfirmPwd" placeholder="Répétez le mot de passe">
+                </div>
+              </div>
+              <button class="ap-save-btn" onclick="apSavePassword()">🔑 Changer le mot de passe</button>
+              <div class="ap-success" id="apPwdSuccess">✅ Mot de passe changé avec succès.</div>
+              <div class="ap-error" id="apPwdError"></div>
+            </div>
+          </div>
+        </div>
+        <a href="{% url 'logout' %}" class="m-logout-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Se déconnecter
+        </a>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ══════════ ADMIN MON PROFIL PAGE ══════════ -->
+  <style>
+  #adminProfilPage .ap-layout { display:grid; grid-template-columns:280px 1fr; gap:20px; align-items:start; }
+  @media(max-width:900px){ #adminProfilPage .ap-layout { grid-template-columns:1fr; } }
+  #adminProfilPage .ap-avatar-card { background:var(--admin-card,#fff); border-radius:18px; padding:28px 20px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,.07); }
+  #adminProfilPage .ap-avatar-wrap { position:relative; display:inline-block; margin-bottom:14px; }
+  #adminProfilPage .ap-avatar-img { width:110px; height:110px; border-radius:50%; object-fit:cover; border:3px solid #e5e7eb; background:#f3f4f6; }
+  #adminProfilPage .ap-avatar-btn { position:absolute; bottom:4px; right:4px; background:var(--admin-primary,#16a34a); color:#fff; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; }
+  #adminProfilPage .ap-name { font-size:1.1rem; font-weight:700; color:var(--admin-text,#111); }
+  #adminProfilPage .ap-role { font-size:.82rem; color:var(--admin-muted,#6b7280); margin-top:4px; }
+  #adminProfilPage .ap-forms-card { background:var(--admin-card,#fff); border-radius:18px; padding:28px 24px; box-shadow:0 4px 20px rgba(0,0,0,.07); }
+  #adminProfilPage .ap-tabs { display:flex; gap:8px; margin-bottom:22px; border-bottom:2px solid #e5e7eb; }
+  #adminProfilPage .ap-tab { background:none; border:none; padding:10px 18px; font-size:.9rem; font-weight:600; color:var(--admin-muted,#6b7280); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:.2s; }
+  #adminProfilPage .ap-tab.active { color:var(--admin-primary,#16a34a); border-bottom-color:var(--admin-primary,#16a34a); }
+  #adminProfilPage .ap-panel { display:none; }
+  #adminProfilPage .ap-panel.active { display:block; }
+  #adminProfilPage .ap-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media(max-width:600px){ #adminProfilPage .ap-form-grid { grid-template-columns:1fr; } }
+  #adminProfilPage .ap-form-group { display:flex; flex-direction:column; gap:5px; }
+  #adminProfilPage .ap-form-group.full { grid-column:1/-1; }
+  #adminProfilPage .ap-form-group label { font-size:.82rem; font-weight:600; color:var(--admin-muted,#6b7280); }
+  #adminProfilPage .ap-form-group input { border:1.5px solid #e5e7eb; border-radius:10px; padding:10px 14px; font-size:.9rem; outline:none; transition:.2s; background:var(--admin-bg,#f9fafb); }
+  #adminProfilPage .ap-form-group input:focus { border-color:var(--admin-primary,#16a34a); }
+  #adminProfilPage .ap-save-btn { margin-top:18px; background:var(--admin-primary,#16a34a); color:#fff; border:none; border-radius:12px; padding:12px 28px; font-size:.95rem; font-weight:700; cursor:pointer; transition:.2s; }
+  #adminProfilPage .ap-save-btn:hover { opacity:.9; }
+  #adminProfilPage .ap-success { color:#16a34a; font-size:.85rem; font-weight:600; margin-top:8px; display:none; }
+  #adminProfilPage .ap-error { color:#dc2626; font-size:.85rem; font-weight:600; margin-top:8px; display:none; }
+  </style>
+
+  <div id="adminAddProductModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center;padding:20px;">
+    <div style="width:min(560px,100%);background:var(--admin-card,#fff);border-radius:20px;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.25);">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px;">
+        <div>
+          <h3 id="adminProductModalTitle" style="margin:0;">Ajouter Produit</h3>
+          <p id="adminProductModalSubtitle" style="margin:6px 0 0;color:var(--admin-muted,#6b7280);">Ajouter un produit officiel au catalogue admin.</p>
+        </div>
+        <button id="adminCloseProductModalBtn" class="admin-btn gray-btn" type="button">✕</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div>
+          <label>Nom</label>
+          <input id="adminProductNameInput" type="text" placeholder="Nom produit" style="width:100%;padding:12px;border-radius:12px;border:1px solid #d1d5db;margin-top:6px;">
+        </div>
+        <div>
+          <label>Catégorie</label>
+          <select id="adminProductCategoryInput" style="width:100%;padding:12px;border-radius:12px;border:1px solid #d1d5db;margin-top:6px;">
+            <option value="Legume">Légume</option>
+            <option value="Fruit">Fruit</option>
+            <option value="Animal">Animal</option>
+            <option value="Cereale">Céréale</option>
+          </select>
+        </div>
+        <div>
+          <label>Prix min</label>
+          <input id="adminProductMinInput" type="number" step="0.01" placeholder="0" style="width:100%;padding:12px;border-radius:12px;border:1px solid #d1d5db;margin-top:6px;">
+        </div>
+        <div>
+          <label>Prix max</label>
+          <input id="adminProductMaxInput" type="number" step="0.01" placeholder="0" style="width:100%;padding:12px;border-radius:12px;border:1px solid #d1d5db;margin-top:6px;">
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <label>Photo URL</label>
+        <input id="adminProductPhotoInput" type="text" placeholder="https://..." style="width:100%;padding:12px;border-radius:12px;border:1px solid #d1d5db;margin-top:6px;">
+      </div>
+
+      <div style="margin-top:14px;">
+        <label>Description</label>
+        <textarea id="adminProductDescriptionInput" rows="3" placeholder="Description" style="width:100%;padding:12px;border-radius:12px;border:1px solid #d1d5db;margin-top:6px;"></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;">
+        <button id="adminCancelProductModalBtn" class="admin-btn gray-btn" type="button">Annuler</button>
+        <button id="adminSaveProductModalBtn" class="admin-btn primary-btn" type="button">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="admin-modal" id="adminBenefitModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2100;align-items:center;justify-content:center;padding:20px;">
+    <div class="admin-modal-content" style="width:min(760px,100%);background:var(--admin-card,#fff);border-radius:22px;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.25);">
+      <div class="admin-modal-header" style="display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px;">
+        <div>
+          <h3 id="adminBenefitModalTitle" style="margin:0;">Ajouter un avantage</h3>
+          <p style="margin:6px 0 0;color:var(--admin-muted,#6b7280);">Cet avantage apparaîtra directement dans le dashboard agriculteur.</p>
+        </div>
+        <button class="admin-icon-btn" id="adminCloseBenefitModalBtn" type="button">✕</button>
+      </div>
+      <form id="adminBenefitForm" enctype="multipart/form-data">
+        <input type="hidden" id="adminBenefitEditingId">
+        <div class="admin-benefit-form-grid">
+          <label>Titre<input id="adminBenefitTitleInput" type="text" required placeholder="Ex: Crédits subventionnés"></label>
+          <label>Photo<input id="adminBenefitImageInput" type="file" accept="image/*"></label>
+          <label class="full">Description<textarea id="adminBenefitDescriptionInput" required rows="3" placeholder="Description courte..."></textarea></label>
+          <label class="full">Conditions<textarea id="adminBenefitConditionsInput" rows="3" placeholder="Conditions d’éligibilité..."></textarea></label>
+          <label class="full">Documents requis<textarea id="adminBenefitDocsInput" rows="3" placeholder="Carte d’identité; registre agricole; plan du projet..."></textarea></label>
+        </div>
+        <div class="admin-benefit-modal-footer" style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;">
+          <button id="adminCancelBenefitModalBtn" class="admin-btn gray-btn" type="button">Annuler</button>
+          <button class="admin-btn primary-btn" type="submit">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <div class="admin-modal admin-order-modal" id="adminOrderDetailsModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="adminOrderModalTitle">
+    <div class="admin-order-modal-dialog" role="document">
+      <div class="admin-order-modal-head"><div><span class="admin-order-modal-eyebrow">Détails commande</span><h3 id="adminOrderModalTitle">Commande</h3><p id="adminOrderModalSubtitle">Relation acheteur, agriculteur et transporteur</p></div><button class="admin-icon-btn" id="adminCloseOrderModalBtn" type="button" aria-label="Fermer les détails de la commande">✕</button></div>
+      <div id="adminOrderDetailsContent" class="admin-order-modal-body"></div>
+    </div>
+  </div>
+
+
+  <div class="admin-modal admin-print-modal" id="adminPrintFormModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="adminPrintFormTitle">
+    <div class="admin-print-dialog" role="document">
+      <div class="admin-print-head">
+        <div>
+          <span class="admin-print-eyebrow">Formulaire automatique</span>
+          <h3 id="adminPrintFormTitle">Formulaire</h3>
+          <p id="adminPrintFormSubtitle">Informations verrouillées, prêtes à imprimer.</p>
+        </div>
+        <button class="admin-icon-btn no-print" id="adminClosePrintFormBtn" type="button" aria-label="Fermer le formulaire d’impression">✕</button>
+      </div>
+      <div class="admin-print-toolbar no-print">
+        <span class="admin-print-lock">🔒 Champs verrouillés — l’admin ne peut pas modifier les informations.</span>
+        <button class="admin-btn primary-btn" id="adminPrintFormBtn" type="button">🖨️ Imprimer</button>
+      </div>
+      <div id="adminPrintFormContent" class="admin-print-content"></div>
+    </div>
+  </div>
+
+  <div class="admin-notification-panel" id="adminNotificationPanel" aria-hidden="true">
+    <div class="admin-notification-head">
+      <div>
+        <strong>Notifications admin</strong>
+        <small>Demandes, comptes et avantages</small>
+      </div>
+      <button type="button" id="adminCloseNotificationsBtn">✕</button>
+    </div>
+    <div class="admin-notification-list" id="adminNotificationList">Chargement...</div>
+  </div>
+  <script src="{% static 'js/profile-common.js' %}"></script>
+  <script src="{% static 'js/admin.js' %}?v=50"></script>
+  <script src="{% static 'js/benefits-admin.js' %}?v=45"></script>
+  <script src="{% static 'js/admin-notifications.js' %}?v=34"></script>
+
+  <div class="admin-modal" id="adminCatalogueModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center;padding:20px;">
+    <div class="admin-modal-content" style="width:min(500px,100%);background:var(--admin-card,#fff);border-radius:20px;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.25);">
+      <div class="admin-modal-header" style="display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px;">
+        <div>
+          <h3 id="adminCatalogueModalTitle" style="margin:0;">Ajouter Catalogue</h3>
+          <p style="margin:6px 0 0;color:var(--admin-muted,#6b7280);">Exemple: Fruit, Légume, Céréale...</p>
+        </div>
+        <button class="admin-icon-btn" id="adminCloseCatalogueModalBtn" type="button">✕</button>
+      </div>
+
+      <div class="admin-form-grid">
+        <div class="admin-form-group">
+          <label for="adminCatalogueNameInput">Nom du catalogue</label>
+          <input type="text" id="adminCatalogueNameInput" placeholder="Fruit" style="width:100%;padding:12px;border-radius:12px;border:1px solid #d1d5db;margin-top:6px;">
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;">
+        <button id="adminCancelCatalogueModalBtn" class="admin-btn gray-btn" type="button">Annuler</button>
+        <button id="adminSaveCatalogueModalBtn" class="admin-btn primary-btn" type="button">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+<script src="{% static 'js/agrigov-chatbot.js' %}"></script>
+<script>
+/* ── Admin Mon Profil ── */
+(function(){
+  // Tabs
+  document.querySelectorAll('#adminProfilPage .ap-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#adminProfilPage .ap-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('#adminProfilPage .ap-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel)?.classList.add('active');
+    });
+  });
+
+  // Photo preview
+  document.getElementById('apPhotoInput')?.addEventListener('change', function(){
+    const file = this.files?.[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('apAvatarImg').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  window.apSaveInfo = async function(){
+    const fd = new FormData();
+    fd.append('first_name', document.getElementById('apFirstName').value.trim());
+    fd.append('last_name', document.getElementById('apLastName').value.trim());
+    fd.append('email', document.getElementById('apEmail').value.trim());
+    const photo = document.getElementById('apPhotoInput').files?.[0];
+    if(photo) fd.append('profile_photo', photo);
+    const errEl = document.getElementById('apInfoError');
+    const okEl = document.getElementById('apInfoSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    try {
+      const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+      const res = await fetch('/api/profile/', { method:'POST', headers:{'X-CSRFToken': csrfToken}, body: fd, credentials:'same-origin' });
+      const data = await res.json();
+      if(data.success){
+        okEl.style.display = 'block';
+        if(data.profile?.full_name) document.getElementById('apDisplayName').textContent = data.profile.full_name;
+        // Update topbar profile names
+        document.querySelectorAll('.admin-profile-box strong').forEach(el => el.textContent = data.profile?.full_name || el.textContent);
+      } else {
+        errEl.textContent = '❌ ' + (data.error || 'Erreur lors de la sauvegarde.');
+        errEl.style.display = 'block';
+      }
+    } catch(e) {
+      errEl.textContent = '❌ Erreur réseau.';
+      errEl.style.display = 'block';
+    }
+  };
+
+  window.apSavePassword = async function(){
+    const errEl = document.getElementById('apPwdError');
+    const okEl = document.getElementById('apPwdSuccess');
+    errEl.style.display = 'none'; okEl.style.display = 'none';
+    const body = JSON.stringify({
+      current_password: document.getElementById('apCurrentPwd').value,
+      new_password: document.getElementById('apNewPwd').value,
+      confirm_password: document.getElementById('apConfirmPwd').value
+    });
+    try {
+      const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+      const res = await fetch('/api/change-password/', { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken': csrfToken}, body, credentials:'same-origin' });
+      const data = await res.json();
+      if(data.success){
+        okEl.style.display = 'block';
+        document.getElementById('apCurrentPwd').value = '';
+        document.getElementById('apNewPwd').value = '';
+        document.getElementById('apConfirmPwd').value = '';
+      } else {
+        errEl.textContent = '❌ ' + (data.error || 'Erreur.');
+        errEl.style.display = 'block';
+      }
+    } catch(e) {
+      errEl.textContent = '❌ Erreur réseau.';
+      errEl.style.display = 'block';
+    }
+  };
+})();
+</script>
+<script src="{% static 'js/pwa-register.js' %}"></script>
+<!-- Mobile sidebar overlay -->
+<div class="mob-sidebar-overlay" id="adminMobOverlay" onclick="closeAdminSidebar()"></div>
+<script>
+function toggleAdminSidebar(){
+  if(window.innerWidth > 768) {
+    document.querySelector('.admin-sidebar')?.classList.toggle('mob-open');
+    document.getElementById('adminMobOverlay')?.classList.toggle('show');
+  }
+}
+function closeAdminSidebar(){
+  document.querySelector('.admin-sidebar')?.classList.remove('mob-open');
+  document.getElementById('adminMobOverlay')?.classList.remove('show');
+}
+// Bottom nav replaces sidebar on mobile
+</script>
+
+<!-- ═══ MOBILE BOTTOM NAV — ADMIN ═══ -->
+<nav class="m-bottom-nav m-bottom-nav-scroll" id="mBottomNav">
+  <button class="m-nav-tab active" id="mAdminTab-adminDashboardPage" onclick="mAdminTo('adminDashboardPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Accueil</span>
+  </button>
+  <button class="m-nav-tab" id="mAdminTab-adminProductsPage" onclick="mAdminTo('adminProductsPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M7 10l2 2 6-6"/></svg>
+    <span>Produits</span>
+  </button>
+  <button class="m-nav-tab" id="mAdminTab-adminOrdersPage" onclick="mAdminTo('adminOrdersPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+    <span>Commandes</span>
+  </button>
+  <div class="m-nav-fab-wrap" onclick="mAdminTo('adminUsersPage')">
+    <button class="m-nav-fab"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" width="26" height="26"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></button>
+    <span class="m-nav-fab-label">Utilisateurs</span>
+  </div>
+  <button class="m-nav-tab" id="mAdminTab-adminBenefitsPage" onclick="mAdminTo('adminBenefitsPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <span>Aides</span>
+  </button>
+  <button class="m-nav-tab" id="mAdminTab-adminVetOrgPage" onclick="mAdminTo('adminVetOrgPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a9 9 0 1018 0 9 9 0 00-18 0"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>Vétérinaires</span>
+  </button>
+  <button class="m-nav-tab" id="mAdminTab-adminProfilPage" onclick="mAdminTo('adminProfilPage')">
+    <svg class="m-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Profil</span>
+  </button>
+</nav>
+<script>
+function mAdminTo(pageId) {
+  document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById(pageId);
+  if(page) { page.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+  document.querySelectorAll('.m-nav-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('mAdminTab-' + pageId);
+  if(tab) { tab.classList.add('active'); tab.scrollIntoView({inline:'center',behavior:'smooth'}); }
+}
+function toggleAdminSidebar(){}
+function closeAdminSidebar(){}
+document.querySelectorAll('.admin-menu-link').forEach(function(link){
+  link.addEventListener('click', function(){
+    const pid = this.getAttribute('data-page');
+    if(pid) { document.querySelectorAll('.m-nav-tab').forEach(t=>t.classList.remove('active'));
+      const t=document.getElementById('mAdminTab-'+pid); if(t){t.classList.add('active');t.scrollIntoView({inline:'center',behavior:'smooth'});} }
+  });
+});
+</script>
+
+</body>
+</html>

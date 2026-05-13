@@ -1,0 +1,832 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgriGov — Espace Organisateur</title>
+  <link rel="stylesheet" href="{% static 'css/veterinaire.css' %}">
+  <meta name="theme-color" content="#0d1a0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AgriGov">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
+  <link rel="stylesheet" href="{% static 'css/pwa-mobile.css' %}">
+  <style>
+    /* ─── TOURNEE CARDS ─── */
+    .tour-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:12px;display:flex;gap:16px;align-items:flex-start;transition:border-color .2s,box-shadow .2s}
+    .tour-card:hover{border-color:var(--border-active);box-shadow:var(--shadow-card)}
+    .tour-badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700}
+    .tour-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    .tour-filters .form-input,.tour-filters .form-select{width:auto;padding:8px 12px;font-size:.85rem}
+    /* ─── DARK TOGGLE ─── */
+    .dark-toggle{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid var(--border);font-size:.85rem;color:var(--text-secondary);transition:all .2s;width:100%;margin-top:8px}
+    .dark-toggle:hover{background:var(--bg-card-hover);border-color:var(--border-active)}
+    .toggle-track{position:relative;width:36px;height:20px;background:var(--border);border-radius:99px;transition:background .25s;flex-shrink:0}
+    .toggle-track.on{background:var(--green-primary)}
+    .toggle-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .25s}
+    .toggle-track.on .toggle-thumb{transform:translateX(16px)}
+    /* ─── PROFIL ─── */
+    .profil-avatar-wrap{display:flex;align-items:center;gap:20px;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+    .profil-avatar-circle{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--green-primary),var(--green-light));display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0}
+    /* ─── EMPTY ─── */
+    .org-empty-state{text-align:center;padding:48px 20px;color:var(--text-muted)}
+    .org-empty-state .big{font-size:2.8rem;margin-bottom:12px}
+    /* ─── STAT STRIP ─── */
+    .stat-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+    .stat-strip-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:14px}
+    .stat-strip-icon{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+    .stat-strip-val{font-size:1.7rem;font-weight:800;line-height:1}
+    .stat-strip-label{font-size:.75rem;color:var(--text-muted);margin-top:2px}
+    /* ─── CREATOR ─── */
+    .creator-box{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px}
+    .creator-title{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:700;margin-bottom:16px}
+    .preview-box{background:rgba(74,161,90,.06);border-left:4px solid var(--green-primary);border-radius:10px;padding:16px;margin-top:16px}
+    /* ─── DASHBOARD ─── */
+    .dash-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
+    .dash-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;align-items:center;gap:16px;transition:box-shadow .2s}
+    .dash-card:hover{box-shadow:var(--shadow-card)}
+    .dash-icon{width:54px;height:54px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0}
+    .dash-val{font-size:2rem;font-weight:800;line-height:1}
+    .dash-label{font-size:.78rem;color:var(--text-muted);margin-top:3px}
+    .dash-recent{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+    .dash-recent-title{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:700;margin-bottom:16px}
+    .dash-recent-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+    .dash-recent-item:last-child{border-bottom:none}
+    .dash-quick-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
+    @media(max-width:600px){.stat-strip{grid-template-columns:1fr 1fr}.dash-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<div class="vet-toast" id="orgToast"></div>
+<div class="vet-layout">
+  <div class="vet-mobile-overlay" id="vetOverlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="vet-sidebar" id="vetSidebar">
+    <div>
+      <div class="vet-brand">
+        <div class="vet-brand-icon">&#127970;</div>
+        <div><h2>AgriGov</h2><p>Espace Organisateur</p></div>
+      </div>
+      <div class="vet-sidebar-vet">
+        <div class="vet-avatar">&#127970;</div>
+        <div style="flex:1;min-width:0">
+          <div class="vet-sidebar-vet-name" id="sidebarName">{{ request.user.get_full_name|default:request.user.username }}</div>
+          <div class="vet-sidebar-vet-spec">Organisateur National</div>
+        </div>
+        <div class="disponible-dot" title="Connecte"></div>
+      </div>
+      <nav class="vet-nav">
+        <button class="vet-nav-link active" data-page="dashboard" onclick="orgPage('dashboard',this)">
+          <span class="nav-icon">&#127968;</span> Tableau de bord
+        </button>
+        <button class="vet-nav-link" data-page="alertes" onclick="orgPage('alertes',this)">
+          <span class="nav-icon">&#9888;&#65039;</span> Alerte Admin
+          <span class="nav-badge amber" id="orgAlerteBadge" style="display:none">0</span>
+        </button>
+        <button class="vet-nav-link" data-page="tournees" onclick="orgPage('tournees',this)">
+          <span class="nav-icon">&#128663;</span> Mes Tournees
+          <span class="nav-badge" id="orgTourBadge" style="display:none">0</span>
+        </button>
+        <button class="vet-nav-link" data-page="notifications" onclick="orgPage('notifications',this)">
+          <span class="nav-icon">&#128276;</span> Notifications
+          <span class="nav-badge" id="orgNotifBadge" style="display:none">0</span>
+        </button>
+        <button class="vet-nav-link" data-page="profil" onclick="orgPage('profil',this)">
+          <span class="nav-icon">&#128100;</span> Profil
+        </button>
+      </nav>
+    </div>
+    <div class="vet-sidebar-bottom">
+      <button class="dark-toggle" onclick="orgToggleDark()">
+        <span id="darkIcon">&#127769;</span>
+        <span id="darkLabel">Mode sombre</span>
+        <div style="margin-left:auto">
+          <div class="toggle-track on" id="darkTrack"><div class="toggle-thumb"></div></div>
+        </div>
+      </button>
+      <a href="{% url 'logout' %}" class="vet-logout-btn" style="margin-top:8px">
+        <span>&#128682;</span> Deconnexion
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="vet-main">
+    <div class="vet-mobile-topbar">
+      <button class="vet-hamburger" onclick="toggleSidebar()">&#9776;</button>
+      <span class="vet-logo" style="font-size:1rem">&#127807; AgriGov Organisateur</span>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         PAGE : TABLEAU DE BORD
+    ════════════════════════════════════════ -->
+    <section class="vet-page active" id="page-dashboard">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>&#127968; Tableau de bord</h1>
+          <p>Vue d'ensemble de votre espace organisateur</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <button class="btn" onclick="orgLoadDashboard()">&#128260; Actualiser</button>
+        </div>
+      </div>
+
+      <!-- Salutation -->
+      <div style="background:linear-gradient(135deg,rgba(74,161,90,.12),rgba(74,161,90,.04));border:1px solid rgba(74,161,90,.2);border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:16px">
+        <div style="font-size:2.2rem">&#127970;</div>
+        <div>
+          <div style="font-size:1.1rem;font-weight:700" id="dashGreeting">Bonjour</div>
+          <div style="font-size:.85rem;color:var(--text-muted);margin-top:2px">Bienvenue dans votre espace organisateur AgriGov</div>
+        </div>
+      </div>
+
+      <!-- Statistiques -->
+      <div class="dash-grid">
+        <div class="dash-card">
+          <div class="dash-icon" style="background:rgba(232,168,66,.12)">&#9888;&#65039;</div>
+          <div>
+            <div class="dash-val" id="dashAlertesCount" style="color:var(--amber)">—</div>
+            <div class="dash-label">Alertes admin actives</div>
+          </div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-icon" style="background:rgba(74,161,90,.12)">&#128663;</div>
+          <div>
+            <div class="dash-val" id="dashTourneesTotal" style="color:var(--green-primary)">—</div>
+            <div class="dash-label">Total tournées</div>
+          </div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-icon" style="background:rgba(34,197,94,.12)">&#9989;</div>
+          <div>
+            <div class="dash-val" id="dashTourneesActives" style="color:#22c55e">—</div>
+            <div class="dash-label">Tournées en cours</div>
+          </div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-icon" style="background:rgba(245,158,11,.12)">&#128197;</div>
+          <div>
+            <div class="dash-val" id="dashTourneesPlanif" style="color:var(--amber)">—</div>
+            <div class="dash-label">Tournées planifiées</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions rapides -->
+      <div style="font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:700;margin-bottom:12px">Actions rapides</div>
+      <div class="dash-quick-actions">
+        <button class="btn btn-primary" onclick="orgPage('alertes',document.querySelector('[data-page=alertes]'))">&#9888;&#65039; Voir les alertes</button>
+        <button class="btn" onclick="orgPage('tournees',document.querySelector('[data-page=tournees]'))">&#128663; Mes tournées</button>
+        <button class="btn" onclick="orgPage('notifications',document.querySelector('[data-page=notifications]'))">&#128276; Notifications</button>
+      </div>
+
+      <!-- Dernières tournées -->
+      <div class="dash-recent">
+        <div class="dash-recent-title">&#128197; Dernières tournées planifiées</div>
+        <div id="dashDernieresTournees">
+          <div class="org-empty-state" style="padding:20px"><p>Chargement...</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         PAGE : ALERTE ADMIN
+    ════════════════════════════════════════ -->
+    <section class="vet-page" id="page-alertes">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>&#9888;&#65039; Alerte Admin</h1>
+          <p>Alertes sanitaires et logistiques envoyees par l'administrateur</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <button class="btn" onclick="orgLoadAlertes()">&#128260; Actualiser</button>
+        </div>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat-strip-card">
+          <div class="stat-strip-icon" style="background:rgba(232,168,66,.12)">&#9888;&#65039;</div>
+          <div><div class="stat-strip-val" id="statAlertesActives">0</div><div class="stat-strip-label">Alertes actives</div></div>
+        </div>
+        <div class="stat-strip-card">
+          <div class="stat-strip-icon" style="background:rgba(239,68,68,.12)">&#128680;</div>
+          <div><div class="stat-strip-val" id="statAlertesUrgent">0</div><div class="stat-strip-label">Urgentes</div></div>
+        </div>
+        <div class="stat-strip-card">
+          <div class="stat-strip-icon" style="background:rgba(79,159,232,.12)">&#128226;</div>
+          <div><div class="stat-strip-val" id="statAlertesCampagne">0</div><div class="stat-strip-label">Campagnes</div></div>
+        </div>
+      </div>
+
+      <div class="tour-filters">
+        <input class="form-input" id="alerteSearch" placeholder="&#128269; Rechercher..." oninput="orgRenderAlertes()">
+        <select class="form-select" id="alerteTypeFilter" onchange="orgRenderAlertes()">
+          <option value="all">Tous types</option>
+          <option value="stock_faible">Stock faible</option>
+          <option value="epidemie">Epidemie</option>
+          <option value="campagne">Campagne</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+
+      <div class="alerte-list" id="orgAlertesContainer">
+        <div class="org-empty-state"><div class="big">&#8987;</div><p>Chargement...</p></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         PAGE : MES TOURNÉES
+    ════════════════════════════════════════ -->
+    <section class="vet-page" id="page-tournees">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>&#128663; Mes Tournees</h1>
+          <p>Suivi de toutes vos tournees organisees sur le terrain</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <button class="btn" onclick="orgLoadTournees()">&#128260; Actualiser</button>
+        </div>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat-strip-card">
+          <div class="stat-strip-icon" style="background:rgba(99,102,241,.12)">&#128663;</div>
+          <div><div class="stat-strip-val" id="statTourTotal">0</div><div class="stat-strip-label">Total tournees</div></div>
+        </div>
+        <div class="stat-strip-card">
+          <div class="stat-strip-icon" style="background:rgba(34,197,94,.12)">&#9989;</div>
+          <div><div class="stat-strip-val" id="statTourActives" style="color:var(--green-primary)">0</div><div class="stat-strip-label">En cours</div></div>
+        </div>
+        <div class="stat-strip-card">
+          <div class="stat-strip-icon" style="background:rgba(245,158,11,.12)">&#128197;</div>
+          <div><div class="stat-strip-val" id="statTourPlanif" style="color:var(--amber)">0</div><div class="stat-strip-label">Planifiees</div></div>
+        </div>
+      </div>
+
+      <div class="tour-filters">
+        <input class="form-input" id="tourSearch" placeholder="&#128269; Titre, wilaya..." oninput="orgRenderTournees()">
+        <select class="form-select" id="tourStatutFilter" onchange="orgRenderTournees()">
+          <option value="all">Tous statuts</option>
+          <option value="planifiee">Planifiee</option>
+          <option value="en_cours">En cours</option>
+          <option value="terminee">Terminee</option>
+          <option value="annulee">Annulee</option>
+        </select>
+      </div>
+
+      <div id="orgTourneesContainer">
+        <div class="org-empty-state"><div class="big">&#8987;</div><p>Chargement...</p></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         PAGE : NOTIFICATIONS
+    ════════════════════════════════════════ -->
+    <section class="vet-page" id="page-notifications">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>&#128276; Notifications</h1>
+          <p>Alertes actives, nouvelles tournees et mises a jour</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <button class="btn" onclick="orgLoadNotifications()">&#128260; Actualiser</button>
+        </div>
+      </div>
+      <div class="notif-list" id="orgNotifContainer">
+        <div class="org-empty-state"><div class="big">&#8987;</div><p>Chargement...</p></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════
+         PAGE : PROFIL
+    ════════════════════════════════════════ -->
+    <section class="vet-page" id="page-profil">
+      <div class="vet-topbar">
+        <div class="vet-topbar-title">
+          <h1>&#128100; Mon Profil</h1>
+          <p>Informations personnelles de votre compte organisateur</p>
+        </div>
+        <div class="vet-topbar-actions">
+          <button class="btn btn-primary" onclick="orgSaveProfil()">&#128190; Sauvegarder</button>
+        </div>
+      </div>
+      <div class="vet-card" style="max-width:680px">
+        <div class="vet-card-body">
+          <div class="profil-avatar-wrap">
+            <div class="profil-avatar-circle">&#127970;</div>
+            <div>
+              <div style="font-size:1.1rem;font-weight:700" id="profilDisplayName">Chargement...</div>
+              <div style="font-size:.85rem;color:var(--text-muted);margin-top:3px">Organisateur National</div>
+              <div style="font-size:.8rem;color:var(--green-primary);margin-top:4px" id="profilEmail"></div>
+            </div>
+          </div>
+          <div class="profil-form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="form-group"><label class="form-label">Prenom</label><input class="form-input" id="pFirstName" placeholder="Prenom"></div>
+            <div class="form-group"><label class="form-label">Nom</label><input class="form-input" id="pLastName" placeholder="Nom"></div>
+            <div class="form-group" style="grid-column:1/-1"><label class="form-label">Adresse e-mail</label><input class="form-input" id="pEmail" type="email" placeholder="email@exemple.com"></div>
+            <div class="form-group"><label class="form-label">Telephone</label><input class="form-input" id="pPhone" placeholder="+213 ..."></div>
+            <div class="form-group"><label class="form-label">Ville / Wilaya</label><input class="form-input" id="pCity" placeholder="Alger, Setif..."></div>
+          </div>
+          <div style="margin-top:20px;display:flex;align-items:center;gap:12px">
+            <button class="btn btn-primary" onclick="orgSaveProfil()">&#128190; Sauvegarder</button>
+            <span id="profilFeedback" style="font-size:.85rem"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Overlay pour les modales (tournée, modifier alerte) -->
+<div id="orgDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:20px"></div>
+
+<script>
+'use strict';
+
+const ORG = { alertes:[], tournees:[], rdvs:[], darkMode:true };
+
+/* ─── UTILS ─── */
+function orgEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function getCsrf(){ const c=document.cookie.split(';').map(x=>x.trim()).find(x=>x.startsWith('csrftoken=')); return c?c.split('=')[1]:''; }
+function orgToast(msg,type){
+  const t=document.getElementById('orgToast'); if(!t)return;
+  t.textContent=msg;
+  t.style.borderLeft=type==='ok'?'4px solid var(--green-primary)':type==='err'?'4px solid var(--red)':'4px solid var(--amber)';
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000);
+}
+function toggleSidebar(){ document.getElementById('vetSidebar').classList.toggle('open'); document.getElementById('vetOverlay').classList.toggle('show'); }
+function closeSidebar(){ document.getElementById('vetSidebar').classList.remove('open'); document.getElementById('vetOverlay').classList.remove('show'); }
+
+/* Rend visibles tous les éléments .reveal dans le conteneur actif */
+function orgReveal(containerId){
+  const scope = containerId ? document.getElementById(containerId) : document;
+  if(!scope) return;
+  scope.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+}
+
+/* ─── NAVIGATION ─── */
+function orgPage(id, btn){
+  document.querySelectorAll('.vet-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.vet-nav-link').forEach(b=>b.classList.remove('active'));
+  const page=document.getElementById('page-'+id);
+  if(page) page.classList.add('active');
+  if(btn)  btn.classList.add('active');
+  closeSidebar();
+  if(id==='notifications') orgLoadNotifications();
+  if(id==='profil')        orgLoadProfil();
+  if(id==='tournees')      orgLoadTournees();
+  if(id==='alertes')       orgLoadAlertes();
+  if(id==='dashboard')     orgLoadDashboard();
+}
+
+/* ─── DARK MODE ─── */
+function orgApplyDark(dark){
+  ORG.darkMode=dark;
+  document.body.classList.toggle('light-mode',!dark);
+  const track=document.getElementById('darkTrack');
+  if(track) track.classList.toggle('on',dark);
+  const label=document.getElementById('darkLabel');
+  if(label) label.textContent=dark?'Mode sombre':'Mode clair';
+  const icon=document.getElementById('darkIcon');
+  if(icon) icon.textContent=dark?'\uD83C\uDF19':'\u2600\uFE0F';
+  localStorage.setItem('org_dark',dark?'1':'0');
+}
+function orgToggleDark(){ orgApplyDark(!ORG.darkMode); }
+
+/* ─── WILAYAS ─── */
+const WILAYAS=[['01','Adrar'],['02','Chlef'],['03','Laghouat'],['04','Oum El Bouaghi'],['05','Batna'],['06','Bejaia'],['07','Biskra'],['08','Bechar'],['09','Blida'],['10','Bouira'],['11','Tamanrasset'],['12','Tebessa'],['13','Tlemcen'],['14','Tiaret'],['15','Tizi Ouzou'],['16','Alger'],['17','Djelfa'],['18','Jijel'],['19','Setif'],['20','Saida'],['21','Skikda'],['22','Sidi Bel Abbes'],['23','Annaba'],['24','Guelma'],['25','Constantine'],['26','Medea'],['27','Mostaganem'],['28',"M'Sila"],['29','Mascara'],['30','Ouargla'],['31','Oran'],['32','El Bayadh'],['33','Illizi'],['34','Bordj Bou Arreridj'],['35','Boumerdes'],['36','El Tarf'],['37','Tindouf'],['38','Tissemsilt'],['39','El Oued'],['40','Khenchela'],['41','Souk Ahras'],['42','Tipaza'],['43','Mila'],['44','Ain Defla'],['45','Naama'],['46','Ain Temouchent'],['47','Ghardaia'],['48','Relizane'],['49',"El M'Ghair"],['50','El Meniaa'],['51','Ouled Djellal'],['52','Bordj Baji Mokhtar'],['53','Beni Abbes'],['54','Timimoun'],['55','Touggourt'],['56','Djanet'],['57','In Salah'],['58','In Guezzam']];
+const WILAYA_MAP=Object.fromEntries(WILAYAS.map(([k,v])=>[k,v]));
+function getWilaya(code){ return WILAYA_MAP[code]||code; }
+function orgInitWilayaSelect(selId){
+  const sel=document.getElementById(selId||'cWilaya');
+  if(!sel||sel.options.length>1)return;
+  WILAYAS.forEach(([code,nom])=>{ const o=document.createElement('option');o.value=code;o.textContent=code+' \u2014 '+nom;sel.appendChild(o); });
+}
+
+/* ═══════════════════════════════════════════
+   TABLEAU DE BORD
+═══════════════════════════════════════════ */
+async function orgLoadDashboard(){
+  try{
+    const r=await fetch('/api/org/dashboard/',{credentials:'same-origin'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    const stats=data.stats||{};
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v??'0';};
+    set('dashAlertesCount',   stats.alertes_actives??0);
+    set('dashTourneesTotal',  stats.tournees_total??0);
+    set('dashTourneesActives',stats.tournees_actives??0);
+    set('dashTourneesPlanif', stats.tournees_planifiees??0);
+    // Salutation
+    const greet=document.getElementById('dashGreeting');
+    if(greet){
+      const nom=(data.utilisateur||{}).nom||'';
+      const h=new Date().getHours();
+      const salut=h<12?'Bonjour':h<18?'Bon après-midi':'Bonsoir';
+      greet.textContent=nom?salut+', '+nom+' !':salut+' !';
+    }
+    // Dernières tournées
+    const container=document.getElementById('dashDernieresTournees');
+    if(container){
+      const tournees=data.dernieres_tournees||[];
+      if(!tournees.length){
+        container.innerHTML='<div class="org-empty-state" style="padding:20px"><p>Aucune tournee planifiee pour le moment.<br><button class="btn btn-primary" style="margin-top:12px" onclick="orgPage(\'alertes\',document.querySelector(\'[data-page=alertes]\'))">Voir les alertes</button></p></div>';
+      } else {
+        const STATUT={planifiee:{label:'Planifiee',color:'#6366f1'},en_cours:{label:'En cours',color:'#22c55e'},terminee:{label:'Terminee',color:'#6b7280'},annulee:{label:'Annulee',color:'#ef4444'}};
+        container.innerHTML=tournees.map(t=>{
+          const s=STATUT[t.statut]||{label:t.statut,color:'#6b7280'};
+          return '<div class="dash-recent-item">'+
+            '<div style="font-size:1.5rem">&#128663;</div>'+
+            '<div style="flex:1;min-width:0">'+
+              '<div style="font-weight:600;font-size:.9rem">'+orgEsc(t.nom)+'</div>'+
+              '<div style="font-size:.78rem;color:var(--text-muted)">&#128205; '+orgEsc(t.wilaya_nom||'—')+' &nbsp;|&nbsp; &#128197; '+orgEsc(t.date_debut)+' \u2192 '+orgEsc(t.date_fin)+'</div>'+
+            '</div>'+
+            '<span style="background:'+s.color+'22;color:'+s.color+';padding:2px 10px;border-radius:99px;font-size:.72rem;font-weight:700">'+s.label+'</span>'+
+          '</div>';
+        }).join('');
+      }
+    }
+  }catch(e){
+    console.error('[Org dashboard]',e);
+    const el=document.getElementById('dashDernieresTournees');
+    if(el) el.innerHTML='<div class="org-empty-state" style="padding:20px"><p>Impossible de charger les donnees.<br><button class="btn" style="margin-top:10px" onclick="orgLoadDashboard()">Reessayer</button></p></div>';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   ALERTES ADMIN — CHARGEMENT
+═══════════════════════════════════════════ */
+async function orgLoadAlertes(){
+  const c=document.getElementById('orgAlertesContainer');
+  if(c) c.innerHTML='<div class="org-empty-state"><div class="big">&#8987;</div><p>Chargement...</p></div>';
+  try{
+    const r=await fetch('/api/org/alertes/',{credentials:'same-origin'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    ORG.alertes=data.alertes||[];
+    orgRenderAlerteStats();
+    orgRenderAlertes();
+    orgUpdateBadges();
+  }catch(e){
+    if(c) c.innerHTML='<div class="org-empty-state"><div class="big">&#9888;&#65039;</div><p>Erreur : '+orgEsc(e.message)+'<br><button class="btn" style="margin-top:12px" onclick="orgLoadAlertes()">Reessayer</button></p></div>';
+    console.error('[Org alertes]',e);
+  }
+}
+
+function orgRenderAlerteStats(){
+  const a=ORG.alertes;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('statAlertesActives', a.filter(x=>x.active).length);
+  set('statAlertesUrgent',  a.filter(x=>(x.type_alerte||x.type)==='urgent').length);
+  set('statAlertesCampagne',a.filter(x=>(x.type_alerte||x.type)==='campagne').length);
+}
+
+function orgRenderAlertes(){
+  const c=document.getElementById('orgAlertesContainer'); if(!c)return;
+  const q=(document.getElementById('alerteSearch')?.value||'').toLowerCase();
+  const type=document.getElementById('alerteTypeFilter')?.value||'all';
+  let list=ORG.alertes;
+  if(type!=='all') list=list.filter(a=>(a.type_alerte||a.type)===type);
+  if(q) list=list.filter(a=>((a.titre||'')+' '+(a.message||'')).toLowerCase().includes(q));
+  if(!list.length){
+    c.innerHTML='<div class="org-empty-state"><div class="big">&#10003;</div><p>'+
+      (ORG.alertes.length?'Aucun resultat pour ce filtre.':'Aucune alerte admin pour le moment.')+
+    '</p></div>';
+    return;
+  }
+
+  const typeColors={stock_faible:'amber',epidemie:'epidemie',campagne:'campagne',urgent:'urgent'};
+  const typeLabels={stock_faible:'Stock Faible',epidemie:'Epidemie',campagne:'Campagne',urgent:'Urgent'};
+  const typeIcons ={stock_faible:'📉',epidemie:'🦠',campagne:'📣',urgent:'🚨'};
+  const borderColors={stock_faible:'var(--amber)',epidemie:'var(--red)',campagne:'#4f9fe8',urgent:'var(--red)'};
+
+  c.innerHTML=list.map(a=>{
+    const t=(a.type_alerte||a.type||'stock_faible');
+    const color=typeColors[t]||'amber';
+    const label=typeLabels[t]||t;
+    const icon =typeIcons[t]||'⚠️';
+    const border=borderColors[t]||'var(--amber)';
+    const wils=(a.wilayas||[]);
+    const wilStr=wils.length?(wils[0]==='all'?'Toutes les wilayas':wils.map(w=>getWilaya(w)).join(', ')):'Toutes les wilayas';
+    return `
+    <div class="alerte-card ${color}" style="opacity:1;transform:none">
+      <div class="alerte-icon">${icon}</div>
+      <div class="alerte-content">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+          <span class="alerte-badge ${color}">${label}</span>
+          ${a.active?'<span style="font-size:.7rem;color:var(--green-light);font-weight:600">&#10003; ACTIVE</span>':'<span style="font-size:.7rem;color:var(--text-muted)">RESOLUE</span>'}
+          <span style="font-size:.72rem;color:var(--text-muted);margin-left:auto">${orgEsc(a.date||'')}</span>
+        </div>
+        <div class="alerte-titre">${orgEsc(a.titre)}</div>
+        <div class="alerte-message">${orgEsc(a.message)}</div>
+        <div class="alerte-meta">
+          <span style="font-size:.75rem;color:var(--text-muted)">&#128205; Wilayas : <strong>${orgEsc(wilStr)}</strong></span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn btn-primary" style="font-size:.82rem;padding:8px 16px" onclick="orgOuvrirPlanifierTournee(${a.id})">&#128663; Organiser une tournee</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════
+   PLANIFIER UNE TOURNÉE (modale)
+═══════════════════════════════════════════ */
+function orgOuvrirPlanifierTournee(alerteId){
+  const alerte=ORG.alertes.find(x=>x.id===alerteId);
+  const overlay=document.getElementById('orgDetailOverlay');
+  overlay.style.display='flex';
+  overlay.onclick=e=>{if(e.target===overlay)overlay.style.display='none';};
+
+  const wilayaOpts=WILAYAS.map(([code,nom])=>
+    '<option value="'+code+'">'+code+' \u2014 '+orgEsc(nom)+'</option>'
+  ).join('');
+  const today=new Date().toISOString().split('T')[0];
+
+  overlay.innerHTML=`
+    <div style="background:var(--bg-card);border-radius:16px;padding:28px;max-width:560px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <div>
+          <h3 style="margin:0 0 4px;font-size:1.05rem">&#128663; Organiser une tournee</h3>
+          ${alerte?`<div style="font-size:.82rem;color:var(--text-muted);margin-top:4px">&#9888;&#65039; En reponse a : <strong>${orgEsc(alerte.titre)}</strong></div>`:''}
+        </div>
+        <button onclick="document.getElementById('orgDetailOverlay').style.display='none'"
+          style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);line-height:1">&#10005;</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="form-group">
+          <label class="form-label">Nom de la tournee *</label>
+          <input class="form-input" id="planNom" placeholder="Ex: Campagne distribution M'Sila">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Date debut *</label>
+            <input class="form-input" type="date" id="planDateDebut" min="${today}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date fin *</label>
+            <input class="form-input" type="date" id="planDateFin" min="${today}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Wilaya</label>
+          <select class="form-select" id="planWilaya">
+            <option value="">-- Selectionner une wilaya --</option>
+            ${wilayaOpts}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description / Ce qui sera fait</label>
+          <textarea class="form-textarea" id="planDescription" rows="4"
+            placeholder="Decrivez les actions prevues dans cette tournee..."></textarea>
+        </div>
+        <div id="planFeedback" style="font-size:.85rem;text-align:center;display:none;padding:10px 14px;border-radius:8px"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px">
+          <button class="btn" onclick="document.getElementById('orgDetailOverlay').style.display='none'">Annuler</button>
+          <button class="btn btn-primary" id="planSubmitBtn" onclick="orgValiderTournee(${alerteId??'null'})">&#10003; Valider la tournee</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function orgValiderTournee(alerteId){
+  const nom=document.getElementById('planNom')?.value.trim()||'';
+  const dateDebut=document.getElementById('planDateDebut')?.value||'';
+  const dateFin=document.getElementById('planDateFin')?.value||'';
+  const wilaya=document.getElementById('planWilaya')?.value||'';
+  const description=document.getElementById('planDescription')?.value.trim()||'';
+  const fb=document.getElementById('planFeedback');
+  const btn=document.getElementById('planSubmitBtn');
+
+  function showErr(msg){if(fb){fb.style.display='block';fb.style.background='rgba(239,68,68,.1)';fb.style.color='var(--red)';fb.textContent=msg;}}
+  function showInfo(msg){if(fb){fb.style.display='block';fb.style.background='rgba(74,161,90,.1)';fb.style.color='var(--green-primary)';fb.textContent=msg;}}
+
+  if(!nom){showErr('Le nom de la tournee est obligatoire.');return;}
+  if(!dateDebut){showErr('La date de debut est obligatoire.');return;}
+  if(!dateFin){showErr('La date de fin est obligatoire.');return;}
+  if(dateFin<dateDebut){showErr('La date de fin ne peut pas etre avant la date de debut.');return;}
+
+  showInfo('Enregistrement en cours...');
+  if(btn){btn.disabled=true;}
+
+  try{
+    const body={nom,date_debut:dateDebut,date_fin:dateFin,wilaya,description};
+    if(alerteId) body.alerte_id=alerteId;
+    const r=await fetch('/api/org/tournees/creer/',{
+      method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf()},
+      body:JSON.stringify(body)
+    });
+    const data=await r.json();
+    if(r.ok&&data.ok){
+      document.getElementById('orgDetailOverlay').style.display='none';
+      orgToast('Tournee planifiee avec succes !','ok');
+      // Ajouter immédiatement la tournée à la liste et rafraîchir
+      ORG.tournees.unshift({
+        id:data.id, nom:data.nom, wilaya:wilaya,
+        wilaya_nom:data.wilaya_nom||getWilaya(wilaya)||wilaya,
+        date_debut:dateDebut, date_fin:dateFin,
+        description:description, statut:'planifiee',
+        statut_label:'Planifiee',
+        alerte_id:alerteId||null,
+        date_creation:new Date().toLocaleDateString('fr-FR')
+      });
+      orgRenderTourneeStats();
+      orgRenderTournees();
+      // Aussi rafraîchir depuis le serveur
+      orgLoadTournees();
+      orgLoadDashboard();
+    } else {
+      showErr('Erreur : '+(data.error||r.status));
+    }
+  }catch(e){
+    showErr('Erreur reseau : '+e.message);
+  } finally {
+    if(btn){btn.disabled=false;}
+  }
+}
+
+/* ═══════════════════════════════════════════
+   MES TOURNÉES
+═══════════════════════════════════════════ */
+async function orgLoadTournees(){
+  try{
+    const r=await fetch('/api/org/mes-tournees/',{credentials:'same-origin'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    ORG.tournees=data.tournees||[];
+    orgRenderTourneeStats();
+    orgRenderTournees();
+    orgUpdateBadges();
+  }catch(e){
+    const el=document.getElementById('orgTourneesContainer');
+    if(el) el.innerHTML='<div class="org-empty-state"><div class="big">&#9888;&#65039;</div><p>Erreur : '+orgEsc(e.message)+'<br><button class="btn" style="margin-top:12px" onclick="orgLoadTournees()">Reessayer</button></p></div>';
+    console.error('[Org tournees]',e);
+  }
+}
+
+function orgRenderTourneeStats(){
+  const t=ORG.tournees;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('statTourTotal',  t.length);
+  set('statTourActives',t.filter(x=>x.statut==='en_cours').length);
+  set('statTourPlanif', t.filter(x=>x.statut==='planifiee').length);
+}
+
+function orgRenderTournees(){
+  const c=document.getElementById('orgTourneesContainer'); if(!c)return;
+  const q=(document.getElementById('tourSearch')?.value||'').toLowerCase();
+  const statut=document.getElementById('tourStatutFilter')?.value||'all';
+  let list=ORG.tournees;
+  if(statut!=='all') list=list.filter(t=>t.statut===statut);
+  if(q) list=list.filter(t=>((t.nom||t.titre||'')+(t.wilaya_nom||t.wilaya||'')).toLowerCase().includes(q));
+  if(!list.length){
+    c.innerHTML='<div class="org-empty-state"><div class="big">&#128663;</div><p>'+(ORG.tournees.length?'Aucun resultat pour ce filtre.':'Aucune tournee planifiee.<br><br><button class="btn btn-primary" onclick="orgPage(\'alertes\',document.querySelector(\'[data-page=alertes]\'))">Voir les alertes admin</button>')+'</p></div>';
+    return;
+  }
+  const STATUT={planifiee:{label:'Planifiee',color:'#6366f1'},en_cours:{label:'En cours',color:'#22c55e'},terminee:{label:'Terminee',color:'#6b7280'},annulee:{label:'Annulee',color:'#ef4444'}};
+  c.innerHTML=list.map(t=>{
+    const s=STATUT[t.statut]||{label:t.statut,color:'#6b7280'};
+    return `
+    <div class="tour-card">
+      <div style="font-size:2rem;flex-shrink:0">&#128663;</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+          <div style="font-weight:700;font-size:.95rem">${orgEsc(t.nom||t.titre||'Sans nom')}</div>
+          <span class="tour-badge" style="background:${s.color}22;color:${s.color}">${s.label}</span>
+        </div>
+        <div style="font-size:.85rem;color:var(--text-secondary);margin-bottom:6px">&#128205; <strong>${orgEsc(t.wilaya_nom||getWilaya(t.wilaya)||'Toutes wilayas')}</strong></div>
+        <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:4px">&#128197; ${orgEsc(t.date_debut||'?')} \u2192 ${orgEsc(t.date_fin||'?')}</div>
+        ${t.description?'<div style="font-size:.8rem;color:var(--text-secondary);margin-top:6px;line-height:1.5">'+orgEsc(t.description.slice(0,120))+(t.description.length>120?'...':'')+'</div>':''}
+        ${t.date_creation?'<div style="font-size:.72rem;color:var(--text-muted);margin-top:6px">Creee le '+orgEsc(t.date_creation)+'</div>':''}
+        ${t.alerte_id?'<div style="margin-top:6px;font-size:.72rem;color:var(--amber);font-weight:600">&#9888;&#65039; Planifiee suite a une alerte admin</div>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════
+   NOTIFICATIONS
+═══════════════════════════════════════════ */
+async function orgLoadNotifications(){
+  const c=document.getElementById('orgNotifContainer'); if(!c)return;
+  c.innerHTML='<div class="org-empty-state"><div class="big">&#8987;</div><p>Chargement...</p></div>';
+  const tasks=[];
+  if(!ORG.alertes.length)  tasks.push(orgLoadAlertes());
+  if(!ORG.tournees.length) tasks.push(orgLoadTournees());
+  if(tasks.length) await Promise.allSettled(tasks);
+
+  const notifs=[];
+  const typeIcons={stock_faible:'📉',epidemie:'🦠',campagne:'📣',urgent:'🚨'};
+
+  ORG.alertes.filter(a=>a.active).forEach(a=>{
+    notifs.push({type:'alerte',icon:typeIcons[a.type_alerte||a.type]||'⚠️',iconClass:'alerte',
+      titre:'Alerte active : '+a.titre,
+      desc:(a.message||'').slice(0,120)+((a.message||'').length>120?'...':''),
+      time:a.date||'',urgent:(a.type_alerte||a.type)==='urgent'});
+  });
+
+  ORG.tournees.filter(t=>['en_cours','planifiee'].includes(t.statut)).forEach(t=>{
+    notifs.push({type:'rdv',icon:t.statut==='en_cours'?'🚗':'📅',iconClass:'rdv',
+      titre:(t.statut==='en_cours'?'Tournee en cours : ':'Tournee planifiee : ')+(t.nom||t.titre||''),
+      desc:'&#128205; '+(t.wilaya_nom||getWilaya(t.wilaya)||'Toutes wilayas'),
+      time:(t.date_debut||'')+' \u2192 '+(t.date_fin||''),urgent:false});
+  });
+
+  if(!notifs.length){
+    c.innerHTML='<div class="org-empty-state"><div class="big">&#128276;</div><h3 style="color:var(--green-primary);margin:0 0 8px">Aucune notification</h3><p style="margin:0">Vous etes a jour.</p></div>';
+    return;
+  }
+  notifs.sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0));
+  c.innerHTML=notifs.map(n=>`
+    <div class="notif-item ${n.urgent?'unread':''}">
+      <div class="notif-icon ${n.iconClass}">${n.icon}</div>
+      <div class="notif-text">
+        <div class="notif-title">${orgEsc(n.titre)}</div>
+        <div class="notif-desc">${n.desc}</div>
+        <div class="notif-time">&#128336; ${orgEsc(n.time)}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════
+   BADGES
+═══════════════════════════════════════════ */
+function orgUpdateBadges(){
+  const alertActives=ORG.alertes.filter(a=>a.active).length;
+  const tourActives=ORG.tournees.filter(t=>['planifiee','en_cours'].includes(t.statut)).length;
+  const setBadge=(id,n)=>{ const el=document.getElementById(id);if(!el)return;el.textContent=n>9?'9+':String(n);el.style.display=n?'':'none'; };
+  setBadge('orgAlerteBadge',alertActives);
+  setBadge('orgTourBadge',tourActives);
+  setBadge('orgNotifBadge',alertActives+tourActives);
+}
+
+/* ═══════════════════════════════════════════
+   PROFIL
+═══════════════════════════════════════════ */
+async function orgLoadProfil(){
+  try{
+    const r=await fetch('/api/profile/',{credentials:'same-origin'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    if(!data.success)return;
+    const p=data.profile||{};
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+    set('pFirstName',p.first_name); set('pLastName',p.last_name);
+    set('pEmail',p.email); set('pPhone',p.phone);
+    set('pCity',p.city||p.wilaya);
+    const name=[p.first_name,p.last_name].filter(Boolean).join(' ')||p.username||'Organisateur';
+    const dn=document.getElementById('profilDisplayName'); if(dn)dn.textContent=name;
+    const pe=document.getElementById('profilEmail');       if(pe)pe.textContent=p.email||'';
+    const sn=document.getElementById('sidebarName');       if(sn)sn.textContent=name;
+  }catch(e){ console.error('[Org profil]',e); orgToast('Impossible de charger le profil','err'); }
+}
+
+async function orgSaveProfil(){
+  const body={
+    first_name:document.getElementById('pFirstName')?.value.trim()||'',
+    last_name: document.getElementById('pLastName')?.value.trim()||'',
+    email:     document.getElementById('pEmail')?.value.trim()||'',
+    phone:     document.getElementById('pPhone')?.value.trim()||'',
+    city:      document.getElementById('pCity')?.value.trim()||'',
+  };
+  const fb=document.getElementById('profilFeedback');
+  if(!body.first_name&&!body.last_name){if(fb){fb.style.color='var(--red)';fb.textContent='Le nom est obligatoire.';} return;}
+  if(!body.email){if(fb){fb.style.color='var(--red)';fb.textContent="L'email est obligatoire.";} return;}
+  if(fb){fb.style.color='var(--text-muted)';fb.textContent='Sauvegarde...';}
+  try{
+    const r=await fetch('/api/profile/',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf()},body:JSON.stringify(body)});
+    const data=await r.json();
+    if(data.success){
+      if(fb){fb.style.color='var(--green-primary)';fb.textContent='Profil sauvegarde.';}
+      orgToast('Profil mis a jour','ok');
+      const name=[body.first_name,body.last_name].filter(Boolean).join(' ');
+      const dn=document.getElementById('profilDisplayName');if(dn)dn.textContent=name;
+      const sn=document.getElementById('sidebarName');if(sn)sn.textContent=name;
+      const pe=document.getElementById('profilEmail');if(pe)pe.textContent=body.email;
+    } else { if(fb){fb.style.color='var(--red)';fb.textContent='Erreur : '+(data.error||'Inconnue');} }
+  }catch(e){if(fb){fb.style.color='var(--red)';fb.textContent='Erreur reseau.';}}
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+  const saved=localStorage.getItem('org_dark');
+  orgApplyDark(saved===null?true:saved==='1');
+  // Charger les données initiales
+  orgLoadDashboard();
+  orgLoadAlertes();
+  orgLoadTournees();
+});
+</script>
+<script src="{% static 'js/agrigov-chatbot.js' %}"></script>
+<script src="{% static 'js/pwa-register.js' %}"></script>
+</body>
+</html>

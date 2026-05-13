@@ -1,0 +1,300 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact</title>
+    <link rel="stylesheet" href="{% static 'css/public-nav.css' %}">
+    <link rel="stylesheet" href="{% static 'css/contact.css' %}">
+
+<!-- PWA Mobile -->
+<meta name="theme-color" content="#2d7a2d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AgriGov">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="logo" onclick="location.href='{% url 'home' %}'">Agri<span>Gov</span></div>
+  <ul>
+    <li onclick="location.href='{% url 'home' %}'">Accueil</li>
+    <li onclick="location.href='{% url 'services' %}'">Services</li>
+    <li onclick="location.href='{% url 'contact' %}'" style="color:var(--gold)">Contact</li>
+  </ul>
+  <button class="nav-cta" onclick="location.href='{% url 'login' %}'">Se connecter</button>
+  <button class="nav-hamburger" id="navHamburger" aria-label="Menu" onclick="toggleMobileNav()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile Navigation Drawer -->
+<div class="nav-mobile-drawer" id="navMobileDrawer">
+  <button class="nav-mobile-close" onclick="closeMobileNav()">✕</button>
+  <ul>
+    <li><span class="nav-mob-link" onclick="closeMobileNav();location.href='{% url 'home' %}'">🏠 Accueil</span></li>
+    <li><span class="nav-mob-link" onclick="closeMobileNav();location.href='{% url 'services' %}'">⚙️ Services</span></li>
+    <li><span class="nav-mob-link" onclick="closeMobileNav();location.href='{% url 'contact' %}'">📞 Contact</span></li>
+  </ul>
+  <button class="nav-mob-cta" onclick="closeMobileNav();location.href='{% url 'login' %}'">Se connecter</button>
+</div>
+
+<!-- HERO -->
+<section class="contact-hero">
+  <div class="hero-mesh"></div>
+  <div class="hero-grid"></div>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="contact-hero-content">
+    <div class="hero-badge">Ministère de l'Agriculture · Nous contacter</div>
+    <h1>Parlons <em>ensemble</em></h1>
+    <p>Notre équipe est là pour répondre à toutes vos questions et à tous vos besoins concernant la plateforme AgriGov, ainsi que les transactions agricoles.</p>
+  </div>
+</section>
+
+<!-- MAIN CONTACT -->
+<section class="contact-body">
+  <div class="contact-layout">
+
+    <!-- LEFT: Info -->
+    <div class="info-block">
+      <div>
+        <div class="section-label">Coordonnées</div>
+        <div class="info-block-title">Contactez le<br>Ministère</div>
+        <div class="info-block-desc">Retrouvez toutes les informations pour nous joindre, que ce soit par téléphone, e-mail ou en vous rendant directement à nos bureaux.</div>
+      </div>
+
+      <div class="contact-card">
+        <div class="card-icon-circle">📞</div>
+        <div>
+          <div class="card-info-label">Téléphone Principal</div>
+          <div class="card-info-value"><a href="tel:+21321691800">+213 (0)05 06 24 08</a></div>
+        </div>
+      </div>
+
+      <div class="contact-card">
+        <div class="card-icon-circle">📠</div>
+        <div>
+          <div class="card-info-label">Fax</div>
+          <div class="card-info-value">+213 (0)05 08 24 06</div>
+        </div>
+      </div>
+
+      <div class="contact-card">
+        <div class="card-icon-circle">📧</div>
+        <div>
+          <div class="card-info-label">Adresse e-mail</div>
+          <div class="card-info-value">
+            <a href="mailto:contact@minagri.gov.dz">contact@agrigov.gov.dz</a><br>
+            <a href="mailto:agrigov@minagri.gov.dz" style="font-size:14px;color:var(--text-muted)">agrigov@agrigov.gov.dz</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-card">
+        <div class="card-icon-circle">📍</div>
+        <div>
+          <div class="card-info-label">Siège du Ministère</div>
+          <div class="card-info-value">Rue des Quatre Canons, Alger-Centre<br><span style="font-size:14px;color:var(--text-muted)">16000, Alger, Algérie</span></div>
+        </div>
+      </div>
+
+      <div class="contact-card">
+        <div class="card-icon-circle">🌐</div>
+        <div>
+          <div class="card-info-label">Site officiel</div>
+          <div class="card-info-value"><a href="https://www.agrigov.gov.dz" target="_blank">www.minagri.gov.dz</a></div>
+        </div>
+      </div>
+
+      <!-- Social -->
+      <div class="social-block">
+        <div class="social-block-title">Suivez-nous</div>
+        <div class="social-block-sub">Nos plate-formes sur les réseaux sociaux vous permettent de suivre toutes les nouveautés dans le domaines agricole ainsi que les mises à jour de la plate-forme AgriGov.</div>
+        <div class="social-grid">
+          <a href="https://www.facebook.com/Madr.gov.dz" target="_blank" class="social-btn"><span class="sicon">📘</span> Facebook</a>
+          <a href="https://x.com/Madr_algerie" target="_blank" class="social-btn"><span class="sicon">🐦</span> Twitter / X</a>
+          <a href="https://youtube.com/@madrp_2024?si=XzZMMyxUQgb3EuQc" target="_blank" class="social-btn"><span class="sicon">▶️</span> YouTube</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Support Info -->
+    <div class="form-block contact-support-block" id="contactSupport">
+      <div class="form-title">Support & assistance</div>
+      <div class="form-sub">Le formulaire d'envoi de message a ete retire. Utilisez les coordonnees officielles pour contacter l'equipe AgriGov.</div>
+
+      <div class="contact-card support-card-inline">
+        <div class="card-icon-circle">@</div>
+        <div>
+          <div class="card-info-label">Support e-mail</div>
+          <div class="card-info-value"><a href="mailto:contact@agrigov.gov.dz">contact@agrigov.gov.dz</a></div>
+        </div>
+      </div>
+
+      <div class="contact-card support-card-inline">
+        <div class="card-icon-circle">Tel</div>
+        <div>
+          <div class="card-info-label">Assistance telephone</div>
+          <div class="card-info-value"><a href="tel:+21305062408">+213 (0)05 06 24 08</a></div>
+        </div>
+      </div>
+
+      <div class="contact-card support-card-inline">
+        <div class="card-icon-circle">Info</div>
+        <div>
+          <div class="card-info-label">Bureau AgriGov</div>
+          <div class="card-info-value">Rue des Quatre Canons, Alger-Centre</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- MAP -->
+<section class="map-section">
+  <div class="map-header">
+    <div class="section-label">Localisation</div>
+    <h2>Notre siège à Alger</h2>
+  </div>
+  <div class="map-wrap" id="mapWrap">
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3197.112!2d3.0589!3d36.7534!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x128fb325b6ad8b87%3A0x8bb8e3dc0e8efb06!2sMinistère%20de%20l'Agriculture!5e0!3m2!1sfr!2sdz!4v1680000000000!5m2!1sfr!2sdz"
+      allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+    <div class="map-badge">
+      <div class="map-badge-icon">🏛️</div>
+      <div class="map-badge-text">
+        <strong>Ministère de l'Agriculture</strong>
+        <span>Rue des Quatre Canons, Alger</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOURS -->
+<section class="hours-band">
+  <div class="hours-col">
+    <div class="hours-label">Horaires d'ouverture</div>
+    <div class="hours-title">Accueil du public</div>
+    <div class="hours-row"><span class="hours-day">Dimanche – Jeudi</span><span class="hours-time">08h00 – 17h30</span></div>
+    <div class="hours-row"><span class="hours-day">Vendredi</span><span class="hours-time closed">Fermé</span></div>
+    <div class="hours-row"><span class="hours-day">Samedi</span><span class="hours-time">08h00 - 12h00</span></div>
+  </div>
+  <div class="hours-col">
+    <div class="hours-label">Support plateforme</div>
+    <div class="badge-open">En ligne</div>
+    <div class="hours-title">AgriGov Market</div>
+    <div class="hours-row"><span class="hours-day">Dimanche – Jeudi</span><span class="hours-time">08h00 – 19h30</span></div>
+    <div class="hours-row"><span class="hours-day">Vendredi</span><span class="hours-time closed">Fermé</span></div>
+    <div class="hours-row"><span class="hours-day">Samedi</span><span class="hours-time">08h00 – 14h00</span></div>
+  </div>
+  <div class="hours-col">
+    <div class="hours-label">Urgences & Signalements</div>
+    <div class="hours-title">Ligne directe</div>
+    <div class="hours-note">Pour tout signalement urgent concernant la plateforme (fraude, abus de marché, problème de paiement), contactez-nous via notre ligne prioritaire :</div>
+    <div style="margin-top:16px;">
+      <a href="tel:+213000000000" style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--gold);text-decoration:none;display:block;margin-bottom:6px;">0800 100 200</a>
+      <span style="font-size:12px;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;">Numéro vert · Gratuit</span>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <div class="footer-logo">Agri<span>Gov</span></div>
+      <div class="footer-desc">Connecter l'agriculture algérienne à l'ère numérique, sous la supervision du Ministère de l'Agriculture.</div>
+    </div>
+
+    <div class="footer-links">
+      <h4>Plateforme</h4>
+      <ul>
+        <li onclick="location.href='{% url 'home' %}'">Accueil</li>
+        <li onclick="location.href='{% url 'services' %}'">Services</li>
+        <li onclick="location.href='{% url 'contact' %}'">Contact</li>
+      </ul>
+    </div>
+
+    <div class="footer-links">
+      <h4>Compte</h4>
+      <ul>
+        <li onclick="location.href='{% url 'login' %}'">Connexion</li>
+        <li onclick="location.href='{% url 'register' %}'">Inscription</li>
+        <li onclick="location.href='{% url 'contact' %}'">Support</li>
+      </ul>
+    </div>
+
+    <div class="footer-links">
+      <h4>Légal</h4>
+      <ul>
+        <li>Conditions d'utilisation</li>
+        <li>Politique de confidentialité</li>
+        <li>Mentions légales</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 AgriGov Market · Ministère de l'Agriculture, Algérie</span>
+    <span>Tous droits réservés</span>
+  </div>
+</footer>
+
+<script src="{% static 'js/contact.js' %}"></script>
+<script src="{% static 'js/agrigov-chatbot.js' %}"></script>
+<script src="{% static 'js/pwa-register.js' %}"></script>
+<script>
+function toggleMobileNav(){var d=document.getElementById('navMobileDrawer'),h=document.getElementById('navHamburger');d.classList.toggle('open');h.classList.toggle('open');document.body.classList.toggle('nav-open');}
+function closeMobileNav(){var d=document.getElementById('navMobileDrawer'),h=document.getElementById('navHamburger');d.classList.remove('open');h.classList.remove('open');document.body.classList.remove('nav-open');}
+document.getElementById('navMobileDrawer').addEventListener('click',function(e){if(e.target===this)closeMobileNav();});
+</script>
+
+<script>
+/* ── Shared Public Nav JS ── */
+(function() {
+  // Scroll effect
+  var nav = document.querySelector('nav');
+  if(nav) {
+    window.addEventListener('scroll', function() {
+      nav.classList.toggle('scrolled', window.scrollY > 50);
+    });
+  }
+  // Scroll to section helper
+  window.scrollToId = function(id) {
+    var el = document.getElementById(id);
+    if(el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+})();
+
+function toggleMobileNav() {
+  var drawer = document.getElementById('navMobileDrawer');
+  if(drawer) {
+    var isOpen = drawer.classList.contains('open');
+    drawer.classList.toggle('open', !isOpen);
+    document.body.style.overflow = isOpen ? '' : 'hidden';
+  }
+}
+function closeMobileNav() {
+  var drawer = document.getElementById('navMobileDrawer');
+  if(drawer) { drawer.classList.remove('open'); document.body.style.overflow = ''; }
+}
+// Close on backdrop click
+document.addEventListener('DOMContentLoaded', function() {
+  var drawer = document.getElementById('navMobileDrawer');
+  if(drawer) drawer.addEventListener('click', function(e) { if(e.target===this) closeMobileNav(); });
+});
+</script>
+</body>
+</html>

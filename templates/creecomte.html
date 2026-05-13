@@ -1,0 +1,354 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créer un compte</title>
+    <link rel="stylesheet" href="{% static 'css/creecompte.css' %}">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+<!-- PWA Mobile -->
+<meta name="theme-color" content="#2d7a2d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AgriGov">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
+<link rel="stylesheet" href="{% static 'css/pwa-mobile.css' %}">
+</head>
+<body>
+
+<nav>
+    <div class="logo" onclick="window.location.href='{% url 'home' %}'">Agri<span>Gov</span></div>
+    <div class="nav-back" onclick="window.location.href='{% url 'home' %}'">← Retour à l'accueil</div>
+</nav>
+
+<div class="page">
+
+  <div id="step-role">
+    <div class="step-title-wrap">
+      <div class="badge-tag">Inscription</div>
+      <h1 class="step-main-title">Quel est <em>votre rôle</em> ?</h1>
+      <p class="step-subtitle">Choisissez votre profil pour commencer l'inscription sur la plateforme AgriGov Market.</p>
+    </div>
+
+    <div class="role-grid">
+      <div class="role-card" onclick="showForm('agriculteur')">
+        <span class="role-emoji">🌾</span>
+        <div class="role-name">Agriculteur</div>
+        <div class="role-desc">Publiez vos récoltes et accédez au marché national</div>
+        <span class="role-arrow">→</span>
+      </div>
+
+      <div class="role-card" onclick="showForm('acheteur')">
+        <span class="role-emoji">🛒</span>
+        <div class="role-name">Acheteur</div>
+        <div class="role-desc">Approvisionnez-vous directement auprès des fermes</div>
+        <span class="role-arrow">→</span>
+      </div>
+
+      <div class="role-card" onclick="showForm('transporteur')">
+        <span class="role-emoji">🚛</span>
+        <div class="role-name">Transporteur</div>
+        <div class="role-desc">Rejoignez notre réseau logistique certifié</div>
+        <span class="role-arrow">→</span>
+      </div>
+
+      <div class="role-card" onclick="showForm('autres')">
+        <span class="role-emoji">💡</span>
+        <div class="role-name">Autres</div>
+        <div class="role-desc">Vétérinaire ou organisation de protection des plantes</div>
+        <span class="role-arrow">→</span>
+      </div>
+    </div>
+
+    <p class="login-link">
+      Vous avez déjà un compte ?
+      <a href="{% url 'login' %}">Se connecter</a>
+    </p>
+  </div>
+
+  <div id="step-form">
+    <div class="form-header">
+      <button class="back-btn" type="button" onclick="showRole()">← Changer de profil</button>
+      <div class="form-role-badge" id="form-role-badge"></div>
+      <h2 class="form-title" id="form-title"></h2>
+      <p class="form-subtitle">
+        Remplissez les informations ci-dessous. Tous les champs marqués
+        <span style="color:var(--gold)">*</span> sont obligatoires.
+      </p>
+    </div>
+
+    <div class="form-card">
+
+      {% if messages %}
+        <div style="margin-bottom:20px;">
+          {% for message in messages %}
+            <div style="background:#ffe5e5;color:#b30000;padding:12px 16px;border-radius:12px;margin-bottom:10px;">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+    <form id="signup-form" method="POST" action="{% url 'signup' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <input type="hidden" name="role" id="role-input">
+        <input type="hidden" name="main_products" id="main-products-hidden">
+        <input type="hidden" name="other_type" id="other-type-hidden">
+
+        <div class="form-section-label">Informations personnelles</div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label>Nom <span class="req">*</span></label>
+            <input type="text" id="f-nom" name="last_name" placeholder="Ex: Benali" required>
+          </div>
+          <div class="form-group half">
+            <label>Prénom <span class="req">*</span></label>
+            <input type="text" id="f-prenom" name="first_name" placeholder="Ex: Ahmed" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label>Numéro de téléphone <span class="req">*</span></label>
+            <input type="tel" id="f-tel" name="phone" placeholder="+213 0X XX XX XX" required>
+          </div>
+          <div class="form-group half">
+            <label>Date de naissance <span class="req">*</span></label>
+            <input type="date" id="f-dob" name="birth_date" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Ville de naissance <span class="req">*</span></label>
+          <input type="text" id="f-ville" name="birth_city" placeholder="Ex: Alger, Oran, Constantine..." required>
+        </div>
+
+        <div class="form-section-label">Photo personnelle</div>
+        <div class="form-group">
+          <label>Photo de profil <span class="req">*</span></label>
+          <div class="file-upload-area" id="photo-upload-area">
+            <input type="file" id="f-photo" name="profile_photo" accept="image/*" onchange="handlePhotoUpload(event)" required>
+            <div class="upload-icon">🖼️</div>
+            <div class="upload-text">Glissez votre photo ou cliquez ici</div>
+            <div class="upload-subtext">Tout format d'image accepté</div>
+            <div class="file-name" id="photo-name"></div>
+          </div>
+        </div>
+
+        <div id="fields-agriculteur" style="display:none">
+          <div class="form-section-label">Informations de la ferme</div>
+
+          <div class="form-group">
+            <label>Nom(s) de ferme <span class="req">*</span></label>
+            <div class="farms-container" id="farms-container">
+              <div class="farm-entry">
+                <input type="text" placeholder="Ex: Ferme L'etoile" class="farm-input" name="farm_names">
+              </div>
+            </div>
+            <button type="button" class="add-farm-btn" onclick="addFarm()">+ Ajouter une ferme</button>
+          </div>
+
+          <div class="form-group">
+            <label>Surface totale (hectares) <span class="req">*</span></label>
+            <input type="number" id="f-surface" name="surface" placeholder="Ex: 14.5" min="0" step="0.1">
+          </div>
+
+          <div class="form-group">
+            <label>Produits/Animaux principaux <span class="req">*</span></label>
+            <div class="veggie-input-wrap">
+              <input
+                type="text"
+                id="f-veggie-input"
+                placeholder="Tapez un produit et appuyez sur Entrée"
+                onkeydown="addVeggie(event)"
+              >
+            </div>
+            <div class="veggie-tags" id="veggie-tags"></div>
+            <p class="veggie-hint">Appuyez sur <strong>Entrée</strong> pour ajouter chaque produit</p>
+          </div>
+        </div>
+
+        <div id="fields-acheteur" style="display:none">
+          <div class="form-section-label">Informations commerciales</div>
+
+          <div class="form-group">
+            <label>Lieu de travail</label>
+            <select id="subject" name="workplace">
+              <option value="">Choisir le lieu…</option>
+              <option value="magasin">Un magasin</option>
+              <option value="boucherie">Une boucherie</option>
+              <option value="centre_commercial">Un centre commercial</option>
+              <option value="restaurant">Un restaurant</option>
+              <option value="hotel">Un hôtel</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Nom de l'établissement</label>
+            <input type="text" id="f-magasin" name="establishment_name" placeholder="Ex: Supermarché Ciel, Mall de Constantine...">
+          </div>
+
+          <div class="form-group">
+            <label>Registre de commerce <span class="req">*</span></label>
+            <div class="file-upload-area" id="rc-upload-area">
+              <input type="file" id="f-rc" name="commercial_register" onchange="handleFileUpload('f-rc','rc-name','rc-upload-area')">
+              <div class="upload-icon">📋</div>
+              <div class="upload-text">Joindre le registre de commerce</div>
+              <div class="upload-subtext">PDF, image ou tout autre format accepté</div>
+              <div class="file-name" id="rc-name"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="fields-transporteur" style="display:none">
+          <div class="form-section-label">Informations du véhicule</div>
+
+          <div class="form-group">
+            <label>Nom / Type du véhicule <span class="req">*</span></label>
+            <input type="text" id="f-vehicule" name="vehicle_name" placeholder="Ex: Camion frigorifique, Fourgon Mercedes...">
+          </div>
+
+          <div class="form-group">
+            <label>Documents du véhicule <span class="req">*</span></label>
+            <div class="file-upload-area" id="veh-upload-area">
+              <input
+                type="file"
+                id="f-veh-docs"
+                name="vehicle_documents"
+                multiple
+                onchange="handleFileUpload('f-veh-docs','veh-docs-name','veh-upload-area')"
+              >
+              <div class="upload-icon">🚛</div>
+              <div class="upload-text">Joindre les documents du véhicule</div>
+              <div class="upload-subtext">Carte grise, assurance, tout format accepté</div>
+              <div class="file-name" id="veh-docs-name"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="fields-autres" style="display:none">
+          <div class="form-section-label">Type de profil</div>
+
+          <div class="form-group">
+            <label>Sélectionnez votre spécialité <span class="req">*</span></label>
+            <div class="autres-options">
+              <label class="option-radio">
+                <input type="radio" name="autres-type-ui" value="veterinaire" onchange="setAutresType('veterinaire')">
+                <div class="option-radio-label">
+                  <span class="opt-icon">🐄</span>
+                  <span class="opt-name">Vétérinaire</span>
+                  <span class="opt-desc">Services de santé animale pour les exploitations agricoles</span>
+                </div>
+              </label>
+
+              <label class="option-radio">
+                <input type="radio" name="autres-type-ui" value="organisation" onchange="setAutresType('organisation')">
+                <div class="option-radio-label">
+                  <span class="opt-icon">🌿</span>
+                  <span class="opt-name">Protection des plantes</span>
+                  <span class="opt-desc">Organisation de protection phytosanitaire et agronomique</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Nom de l'organisation / Cabinet</label>
+            <input type="text" id="f-org-name" name="organization_name" placeholder="Ex: Cabinet vétérinaire El Hayat, ONPV...">
+          </div>
+
+          <div class="form-group">
+            <label>Attestation / Diplôme professionnel</label>
+            <div class="file-upload-area" id="cert-upload-area">
+              <input type="file" id="f-cert" name="certificate" onchange="handleFileUpload('f-cert','cert-name','cert-upload-area')">
+              <div class="upload-icon">🎓</div>
+              <div class="upload-text">Joindre votre attestation ou diplôme</div>
+              <div class="upload-subtext">Tout format accepté</div>
+              <div class="file-name" id="cert-name"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section-label">Informations de connexion</div>
+
+        <div class="form-group">
+          <label>Adresse e-mail <span class="req">*</span></label>
+          <input type="email" id="f-email" name="email" placeholder="votre@email.com" required>
+        </div>
+
+        <div class="form-group">
+          <label>Mot de passe <span class="req">*</span></label>
+          <div class="password-wrap">
+            <input type="password" id="f-password" name="password" placeholder="Minimum 8 caractères" required minlength="8">
+            <button type="button" class="pwd-toggle" onclick="togglePassword('f-password')">👁</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Confirmer le mot de passe <span class="req">*</span></label>
+          <div class="password-wrap">
+            <input type="password" id="f-password2" name="password2" placeholder="Répétez votre mot de passe" required>
+            <button type="button" class="pwd-toggle" onclick="togglePassword('f-password2')">👁</button>
+          </div>
+        </div>
+
+        <div class="form-submit-area">
+          <button type="submit" class="btn-submit">Créer mon compte →</button>
+        </div>
+
+        <p class="form-login-link">
+          Vous avez déjà un compte ?
+          <a href="{% url 'login' %}">Se connecter</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <div id="step-success">
+    <div class="success-card">
+      <div style="font-size:52px; margin-bottom:8px">✅</div>
+      <h2 class="success-title">Inscription réussie !</h2>
+      <p class="success-text">
+        Félicitations ! Votre compte a été créé avec succès.
+      </p>
+
+      <button
+        class="btn-dashboard"
+        id="btn-dashboard"
+        data-agriculteur="{% url 'agriculteur' %}"
+        data-acheteur="{% url 'acheteur' %}"
+        data-transporteur="{% url 'transporteur' %}"
+        data-adminpage="{% url 'adminpage' %}"
+        data-home="{% url 'home' %}"
+        onclick="goToDashboard()">
+        Accéder à mon tableau de bord →
+      </button>
+    </div>
+  </div>
+
+</div>
+
+{% if signup_success %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    currentRole = "{{ user_role }}";
+    document.getElementById('step-role').style.display = 'none';
+    document.getElementById('step-form').style.display = 'none';
+    document.getElementById('step-success').classList.add('visible');
+  });
+</script>
+{% endif %}
+
+<script src="{% static 'js/creecompte.js' %}"></script>
+<script src="{% static 'js/agrigov-chatbot.js' %}"></script>
+<script src="{% static 'js/pwa-register.js' %}"></script>
+</body>
+</html>

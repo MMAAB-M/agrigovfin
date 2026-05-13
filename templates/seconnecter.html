@@ -1,0 +1,174 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1C7C43">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AgriGov">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <title>Se connecter — AgriGov</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
+  <link rel="stylesheet" href="{% static 'css/se connecter.css' %}">
+  <link rel="stylesheet" href="{% static 'css/pwa-mobile.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    .m-auth-header { display: none; }
+    @media (max-width: 768px) {
+      nav { display: none !important; }
+      .m-auth-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: calc(env(safe-area-inset-top, 16px) + 12px) 20px 12px;
+        position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+        background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(0,0,0,0.05);
+      }
+      .m-auth-logo { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.2rem; font-weight: 900; color: #131E16; letter-spacing: -0.03em; cursor: pointer; }
+      .m-auth-logo em { color: #1C7C43; font-style: normal; }
+      .m-auth-back { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 600; color: #4E6558; background: none; border: none; cursor: pointer; padding: 6px 0; font-family: 'Plus Jakarta Sans', sans-serif; text-decoration: none; }
+      .page { padding-top: calc(env(safe-area-inset-top, 16px) + 56px); min-height: 100dvh; }
+      #step-login, #step-success { display: none; }
+      .back-btn { background: none; border: none; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem; font-weight: 600; color: #4E6558; display: inline-flex; align-items: center; gap: 6px; padding: 8px 0 4px; margin-bottom: 16px; width: auto; height: auto; min-height: auto; }
+      #step-role { padding-bottom: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo" onclick="location.href='{% url 'home' %}'">Agri<span>Gov</span></div>
+  <div class="nav-back" onclick="location.href='{% url 'home' %}'">← Retour à l'accueil</div>
+</nav>
+
+<div class="m-auth-header">
+  <span class="m-auth-logo" onclick="location.href='{% url 'home' %}'">Agri<em>Gov</em></span>
+  <a class="m-auth-back" href="{% url 'home' %}">← Accueil</a>
+</div>
+
+<div class="page">
+
+  <!-- STEP 1 : choix du rôle -->
+  <div id="step-role">
+    <div class="step-title-wrap">
+      <div class="badge-tag">Connexion</div>
+      <h1 class="step-main-title">Qui êtes-<em>vous</em> ?</h1>
+      <p class="step-subtitle">Sélectionnez votre profil pour accéder à votre espace personnel AgriGov Market.</p>
+    </div>
+
+    <div class="role-grid">
+      <div class="role-card agri" onclick="showLogin('agriculteur')">
+        <span class="role-emoji">🌾</span>
+        <div class="role-name">Agriculteur</div>
+        <div class="role-desc">Gérez vos récoltes et accédez au marché</div>
+        <span class="role-arrow">→</span>
+      </div>
+      <div class="role-card ach" onclick="showLogin('acheteur')">
+        <span class="role-emoji">🛒</span>
+        <div class="role-name">Acheteur</div>
+        <div class="role-desc">Commandez directement aux fermes</div>
+        <span class="role-arrow">→</span>
+      </div>
+      <div class="role-card trans" onclick="showLogin('transporteur')">
+        <span class="role-emoji">🚛</span>
+        <div class="role-name">Transporteur</div>
+        <div class="role-desc">Gérez vos livraisons certifiées</div>
+        <span class="role-arrow">→</span>
+      </div>
+      <div class="role-card autres" onclick="showLogin('autres')">
+        <span class="role-emoji">🐾</span>
+        <div class="role-name">Vétérinaire / Organisme</div>
+        <div class="role-desc">Vétérinaire ou organisme phytosanitaire</div>
+        <span class="role-arrow">→</span>
+      </div>
+      <div class="role-card admin" onclick="showLogin('admin')" style="grid-column: span 2; max-width: 360px; margin: 0 auto; width: 100%;">
+        <span class="admin-lock">🔒</span>
+        <span class="role-emoji">🏛️</span>
+        <div class="role-name">Administrateur</div>
+        <div class="role-desc">Accès réservé — Ministère de l'Agriculture</div>
+        <span class="role-arrow" style="color: var(--gold); opacity: 0.7;">→</span>
+      </div>
+    </div>
+
+    <p class="signup-link">Pas encore de compte ?
+      <a href="{% url 'signup' %}">Créer un compte</a>
+    </p>
+  </div>
+
+  <!-- STEP 2 : formulaire de connexion -->
+  <div id="step-login">
+    <div class="login-wrap">
+      <button class="back-btn" onclick="showRole()">← Changer de profil</button>
+      <div class="login-card" id="login-card">
+        <div class="login-card-accent"></div>
+        <div class="login-card-inner" id="login-card-inner">
+          <div class="login-role-badge" id="login-role-badge"></div>
+          <h2 class="login-title" id="login-title"></h2>
+          <p class="login-subtitle" id="login-subtitle"></p>
+          <div class="admin-notice" id="admin-notice">
+            <div class="admin-notice-icon">⚠️</div>
+            <div class="admin-notice-text">
+              Cet espace est <strong>strictement réservé</strong> aux administrateurs désignés par le Ministère de l'Agriculture.
+            </div>
+          </div>
+          <form id="login-form" onsubmit="handleLogin(event)" novalidate>
+            {% csrf_token %}
+            <div class="form-group">
+              <label>Adresse e-mail</label>
+              <input type="email" id="f-email" placeholder="votre@email.com" autocomplete="email" inputmode="email">
+              <span class="error-msg" id="err-email">Veuillez saisir une adresse e-mail valide.</span>
+            </div>
+            <div class="form-group">
+              <label>Mot de passe</label>
+              <div class="password-wrap">
+                <input type="password" id="f-password" placeholder="••••••••" autocomplete="current-password">
+                <button type="button" class="pwd-toggle" id="pwd-eye" onclick="togglePassword()">👁</button>
+              </div>
+              <span class="error-msg" id="err-pass">Mot de passe incorrect. Veuillez réessayer.</span>
+            </div>
+            <button type="submit" class="btn-login" id="btn-login">Se connecter →</button>
+          </form>
+          <div class="divider" id="divider-link"><span>ou</span></div>
+          <p class="form-bottom-link" id="bottom-link">
+            Pas encore de compte ?
+            <a href="{% url 'signup' %}">Créer un compte</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 : succès -->
+  <div id="step-success">
+    <div class="success-card">
+      <div class="success-icon" id="success-icon">✅</div>
+      <h2 class="success-title" id="success-title">Connexion réussie !</h2>
+      <p class="success-text" id="success-text">Bienvenue sur AgriGov Market.</p>
+      <a class="btn-dashboard" id="btn-dashboard" href="#">
+        Accéder à mon tableau de bord →
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<div id="page-urls"
+  data-agriculteur="{% url 'agriculteur' %}"
+  data-acheteur="{% url 'acheteur' %}"
+  data-transporteur="{% url 'transporteur' %}"
+  data-veterinaire="{% url 'veterinaire_dashboard' %}"
+  data-organisation="{% url 'organisation' %}"
+  data-admin="{% url 'adminpage' %}"
+  data-home="{% url 'home' %}"
+  data-login-api="{% url 'api_login' %}"
+></div>
+
+<script src="{% static 'js/seconnecter.js' %}"></script>
+<script src="{% static 'js/agrigov-chatbot.js' %}"></script>
+<script src="{% static 'js/pwa-register.js' %}"></script>
+</body>
+</html>

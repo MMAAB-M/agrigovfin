@@ -1,0 +1,203 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgriGov Market</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,700;1,9..144,900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="{% static 'css/public-nav.css' %}">
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+
+<!-- PWA Mobile -->
+<meta name="theme-color" content="#2d7a2d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AgriGov">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<nav id="navbar">
+  <div class="logo" onclick="location.href='{% url 'home' %}'">Agri<span>Gov</span></div>
+  <ul>
+    <li onclick="location.href='{% url 'services' %}'">Services</li>
+    <li onclick="location.href='{% url 'contact' %}'" style="color:var(--gold)">Contact</li>
+  </ul>
+  <button class="nav-cta" onclick="location.href='{% url 'login' %}'">Se connecter</button>
+  <button class="nav-hamburger" id="navHamburger" aria-label="Menu" onclick="toggleMobileNav()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile Navigation Drawer -->
+<div class="nav-mobile-drawer" id="navMobileDrawer">
+  <button class="nav-mobile-close" onclick="closeMobileNav()">✕</button>
+  <ul>
+    <li><span class="nav-mob-link" onclick="closeMobileNav();location.href='{% url 'home' %}'">🏠 Accueil</span></li>
+    <li><span class="nav-mob-link" onclick="closeMobileNav();location.href='{% url 'services' %}'">⚙️ Services</span></li>
+    <li><span class="nav-mob-link" onclick="closeMobileNav();location.href='{% url 'contact' %}'">📞 Contact</span></li>
+    <li><div class="nav-mob-divider"></div></li>
+    <li><span class="nav-mob-link" onclick="closeMobileNav();location.href='{% url 'register' %}'">✏️ Créer un compte</span></li>
+  </ul>
+  <button class="nav-mob-cta" onclick="closeMobileNav();location.href='{% url 'login' %}'">Se connecter</button>
+</div>
+
+<section class="hero">
+  <div class="hero-mesh"></div>
+  <div class="hero-grid"></div>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+  <div class="hero-content">
+    <div class="hero-badge">Ministère de l'Agriculture · Plateforme Officielle</div>
+    <h1>L'agriculture<br><em>connectée</em><br>à l'avenir</h1>
+    <p class="hero-sub">AgriGov Market réunit agriculteurs, acheteurs et transporteurs dans un écosystème numérique sécurisé, supervisé directement par le Ministère de l'Agriculture.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="location.href='{% url 'register' %}'">Créer un compte</button>
+      <button class="nav-cta" onclick="location.href='{% url 'login' %}'">Se connecter</button>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="stat-item"><div class="stat-num">0<span></span></div><div class="stat-label">Acteurs de l'agriculture inscrits</div></div>
+  <div class="stat-item"><div class="stat-num">0<span></span></div><div class="stat-label">Wilayas couvertes</div></div>
+  <div class="stat-item"><div class="stat-num">0<span></span></div><div class="stat-label">Transactions réalisées</div></div>
+  <div class="stat-item"><div class="stat-num">0<span></span></div><div class="stat-label">Taux de satisfaction</div></div>
+</div>
+
+<section class="services">
+  <div class="section-label">Nos Services</div>
+  <div class="section-title">Tout ce dont vous avez besoin</div>
+  <div class="section-desc">Une plateforme unique pour simplifier toute la chaîne agricole, de la ferme jusqu'au consommateur final.</div>
+  <div class="services-grid">
+    <div class="service-card">
+      <div class="card-icon-wrap"><div class="card-icon">🌾</div></div>
+      <div class="card-title">Agriculteurs</div>
+      <div class="card-text">Publiez vos récoltes, fixez vos prix et accédez à un marché national. Gérez vos stocks en temps réel et recevez vos paiements en toute sécurité.</div>
+      <a href="{% url 'ensavoir' %}#agriculteurs" class="card-link">En savoir plus →</a>
+    </div>
+    <div class="service-card">
+      <div class="card-icon-wrap"><div class="card-icon">🛒</div></div>
+      <div class="card-title">Acheteurs</div>
+      <div class="card-text">Approvisionnez-vous directement auprès des fermes à des prix encadrés. Consultez les certifications et passez vos commandes en quelques clics.</div>
+      <a href="{% url 'ensavoir' %}#acheteurs" class="card-link">En savoir plus →</a>
+    </div>
+    <div class="service-card">
+      <div class="card-icon-wrap"><div class="card-icon">🚛</div></div>
+      <div class="card-title">Transporteurs</div>
+      <div class="card-text">Rejoignez notre réseau logistique certifié. Recevez des demandes de livraison géolocalisées et optimisez vos trajets avec nos outils intégrés.</div>
+      <a href="{% url 'ensavoir' %}#transporteurs" class="card-link">En savoir plus →</a>
+    </div>
+    <div class="service-card">
+      <div class="card-icon-wrap"><div class="card-icon">🏛️</div></div>
+      <div class="card-title">Administration</div>
+      <div class="card-text">Supervision des transactions, régulation des prix, tableaux de bord analytiques. La traçabilité totale au service de la politique agricole nationale.</div>
+      <a href="{% url 'ensavoir' %}#administration" class="card-link">En savoir plus →</a>
+    </div>
+    <div class="service-card">
+      <div class="card-icon-wrap"><div class="card-icon">💡</div></div>
+      <div class="card-title">Autres</div>
+      <div class="card-text">Découvrez nos services complémentaires dédiés à l'écosystème agricole. Accédez à des ressources variées, des conseils d'experts et des opportunités de collaboration pour renforcer votre impact sur le marché local</div>
+      <a href="{% url 'ensavoir' %}#autres" class="card-link">En savoir plus →</a>
+    </div>
+  </div>
+</section>
+
+<section class="how">
+  <div class="section-label">Processus</div>
+  <div class="section-title">Comment ça marche en 4 étapes</div>
+  <div class="section-desc">Une expérience simple, transparente et sécurisée du début jusqu'à la livraison.</div>
+  <div class="steps">
+    <div class="step"><div class="step-num">01</div><div class="step-title">Inscription</div><div class="step-text">Créez votre profil vérifié selon votre rôle : agriculteur, acheteur ou transporteur.</div></div>
+    <div class="step"><div class="step-num">02</div><div class="step-title">Publication</div><div class="step-text">Les agriculteurs publient leurs produits avec photos, quantités et prix encadrés.</div></div>
+    <div class="step"><div class="step-num">03</div><div class="step-title">Transaction</div><div class="step-text">Les acheteurs passent commande. Le paiement est sécurisé et supervisé.</div></div>
+    <div class="step"><div class="step-num">04</div><div class="step-title">Livraison</div><div class="step-text">Un transporteur certifié prend en charge la livraison avec suivi en temps réel.</div></div>
+  </div>
+</section>
+
+<section class="testimonial-section">
+  <div class="section-label">Témoignage</div>
+  <div class="big-quote">Le développement de l'agriculture est une priorité de l'État pour assurer la sécurité alimentaire et renforcer l'économie nationale, grâce au soutien de la production et à l'organisation des chaînes de commercialisation agricole. </div>
+  <div class="testimonial-author">Yacine Mahdi W. · Ministre de l'Agriculture, du Développement rural et de la pêche</div>
+</section>
+
+<div class="cta-band">
+  <div class="cta-band-text">
+    <h2>Prêt à rejoindre<br>la révolution agricole ?</h2>
+    <p>Les données de la plateforme se synchronisent en temps réel depuis la base AgriGov Market.</p>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <div class="footer-logo">Agri<span>Gov</span> Market</div>
+      <div class="footer-desc">Connecter l'agriculture algérienne à l'ère numérique, sous la supervision du Ministère de l'Agriculture.</div>
+    </div>
+
+    <div class="footer-links">
+      <h4>Plateforme</h4>
+      <ul>
+        <li onclick="location.href='{% url 'home' %}'">Accueil</li>
+        <li onclick="location.href='{% url 'services' %}'">Services</li>
+        <li onclick="location.href='{% url 'contact' %}'">Contact</li>
+      </ul>
+    </div>
+
+    <div class="footer-links">
+      <h4>Services</h4>
+      <ul>
+        <li onclick="location.href='{% url 'ensavoir' %}#agriculteurs'">Agriculteurs</li>
+        <li onclick="location.href='{% url 'ensavoir' %}#acheteurs'">Acheteurs</li>
+        <li onclick="location.href='{% url 'ensavoir' %}#transporteurs'">Transporteurs</li>
+        <li onclick="location.href='{% url 'ensavoir' %}#administration'">Administration</li>
+        <li onclick="location.href='{% url 'ensavoir' %}#autres'">Autres</li>
+      </ul>
+    </div>
+
+    <div class="footer-links">
+      <h4>Compte</h4>
+      <ul>
+        <li onclick="location.href='{% url 'login' %}'">Connexion</li>
+        <li onclick="location.href='{% url 'register' %}'">Inscription</li>
+        <li onclick="location.href='{% url 'contact' %}'">Contact</li>
+      </ul>
+    </div>
+
+    <div class="footer-links">
+      <h4>Légal</h4>
+      <ul>
+        <li>Conditions d'utilisation</li>
+        <li>Politique de confidentialité</li>
+        <li>Mentions légales</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 AgriGov Market · Ministère de l'Agriculture, Algérie</span>
+    <span>Tous droits réservés</span>
+  </div>
+</footer>
+
+<script src="{% static 'js/home.js' %}"></script>
+<script src="{% static 'js/agrigov-chatbot.js' %}"></script>
+<script src="{% static 'js/pwa-register.js' %}"></script>
+<script>
+function toggleMobileNav(){var d=document.getElementById('navMobileDrawer'),h=document.getElementById('navHamburger');d.classList.toggle('open');h.classList.toggle('open');document.body.classList.toggle('nav-open');}
+function closeMobileNav(){var d=document.getElementById('navMobileDrawer'),h=document.getElementById('navHamburger');d.classList.remove('open');h.classList.remove('open');document.body.classList.remove('nav-open');}
+document.getElementById('navMobileDrawer').addEventListener('click',function(e){if(e.target===this)closeMobileNav();});
+</script>
+</body>
+</html>
