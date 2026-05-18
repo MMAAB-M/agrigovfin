@@ -15,7 +15,7 @@ if _env_file.exists():
 
 SECRET_KEY = 'django-insecure-change-this-key'
 DEBUG = True
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver', '192.168.1.5', '*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
